@@ -1,0 +1,8 @@
+input_field: input
+output_field: output
+citations_field: citations
+request_context_field: context
+quality_bar:
+  overall_pass_rate: 0.80
+  critical_hallucinations: 0
+  citation_exists_rate: 1.0
