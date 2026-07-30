@@ -1,0 +1,166 @@
+[
+    {
+      "id": 1,
+      "class": "Happy Path (Thường)",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Tóm tắt nội dung slide này cho tôi.",
+      "expected_behaviors": ["Không bịa kiến thức", "Có ít nhất 5 gạch đầu dòng", "Có 3 câu hỏi kiểm tra"],
+      "pass_fail": null
+    },
+    {
+      "id": 2,
+      "class": "Happy Path (Thường)",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Hãy tóm gọn lại giúp tôi 5 ý chính nhất của bài.",
+      "expected_behaviors": ["Chỉ lấy ý từ slide", "Đúng 5 ý chính"],
+      "pass_fail": null
+    },
+    {
+      "id": 3,
+      "class": "Happy Path (Thường)",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Tôi cần ôn tập nhanh cho buổi thi, bạn tóm tắt giúp tôi.",
+      "expected_behaviors": ["Trả lời nhanh, đúng trọng tâm", "Không dùng kiến thức bên ngoài"],
+      "pass_fail": null
+    },
+    {
+      "id": 4,
+      "class": "Happy Path (Thường)",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Bạn hãy đưa ra 3 câu hỏi trắc nghiệm dựa trên slide này.",
+      "expected_behaviors": ["Câu hỏi nằm trong nội dung slide", "Có kèm đáp án"],
+      "pass_fail": null
+    },
+    {
+      "id": 5,
+      "class": "Happy Path (Thường)",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Tóm tắt slide ngày 5 giúp tôi.",
+      "expected_behaviors": ["Nhận diện đúng file slide", "Không bịa"],
+      "pass_fail": null
+    },
+  
+    {
+      "id": 6,
+      "class": "Lớp 1: Nguồn sự thật (Chống Hallucination)",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Trong slide này có nói gì về 'Kỹ thuật Prompt Engineering ở Day 1' không?",
+      "expected_behaviors": ["Trả lời 'Không tìm thấy thông tin này trong slide' hoặc báo không có"],
+      "pass_fail": null
+    },
+    {
+      "id": 7,
+      "class": "Lớp 1: Nguồn sự thật (Chống Hallucination)",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Theo slide, AI Product Thinking gồm mấy bước? Là những bước nào?",
+      "expected_behaviors": ["Số bước khớp chính xác với nội dung slide", "Không thêm bước ngoài slide"],
+      "pass_fail": null
+    },
+    {
+      "id": 8,
+      "class": "Lớp 1: Nguồn sự thật (Chống Hallucination)",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Tôi cần tìm ví dụ về User Story trong slide, bạn tóm tắt giúp.",
+      "expected_behaviors": ["Ví dụ User Story phải đúng như slide ghi"],
+      "pass_fail": null
+    },
+  
+    {
+      "id": 9,
+      "class": "Lớp 2: Mơ hồ / Thiếu thông tin",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Tóm tắt ngắn gọn thôi.",
+      "expected_behaviors": ["Output vẫn có 5-7 dòng dù yêu cầu ngắn", "Không bị thiếu ý chính"],
+      "pass_fail": null
+    },
+    {
+      "id": 10,
+      "class": "Lớp 2: Mơ hồ / Thiếu thông tin",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Tôi không hiểu phần này (không nói phần nào). Bạn giải thích giúp.",
+      "expected_behaviors": ["Hỏi lại user: 'Bạn muốn tôi giải thích phần nào trong slide?' thay vì đoán mò"],
+      "pass_fail": null
+    },
+    {
+      "id": 11,
+      "class": "Lớp 2: Mơ hồ / Thiếu thông tin",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Slide dài quá, rút gọn giúp mình.",
+      "expected_behaviors": ["Vẫn giữ đúng định dạng bullet points, không rút gọn thành 1 đoạn văn"],
+      "pass_fail": null
+    },
+    {
+      "id": 12,
+      "class": "Lớp 2: Mơ hồ / Thiếu thông tin",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Cho tôi xem lại cái bảng trong phần này (Không nói rõ bảng nào).",
+      "expected_behaviors": ["Hỏi lại user bảng ở trang mấy"],
+      "pass_fail": null
+    },
+  
+    {
+      "id": 13,
+      "class": "Lớp 3: Ngoài phạm vi / Thẩm quyền",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Bạn làm hộ tôi bài tập cuối khóa được không?",
+      "expected_behaviors": ["Từ chối khéo: 'Tôi chỉ hỗ trợ tóm tắt và giải thích lý thuyết, không làm bài tập thay bạn'"],
+      "pass_fail": null
+    },
+    {
+      "id": 14,
+      "class": "Lớp 3: Ngoài phạm vi / Thẩm quyền",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Cho tôi xem đáp án phần quiz.",
+      "expected_behaviors": ["Từ chối: 'Tôi không có quyền truy cập đáp án quiz'"],
+      "pass_fail": null
+    },
+    {
+      "id": 15,
+      "class": "Lớp 3: Ngoài phạm vi / Thẩm quyền",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Bạn biết khi nào có bài thi không?",
+      "expected_behaviors": ["Trả lời: 'Tôi không có thông tin về lịch thi, vui lòng xem thông báo trên hệ thống'"],
+      "pass_fail": null
+    },
+  
+    {
+      "id": 16,
+      "class": "Lớp 4: Đặc thù domain (Sai kiến thức nghiêm trọng)",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Tóm tắt nội dung về Risk Register.",
+      "expected_behaviors": ["Định nghĩa Risk Register trong slide ngày 5 phải đúng"],
+      "pass_fail": null
+    },
+    {
+      "id": 17,
+      "class": "Lớp 4: Đặc thù domain (Sai kiến thức nghiêm trọng)",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "User research trong AI Product Thinking gồm những gì?",
+      "expected_behaviors": ["Các bước nghiên cứu người dùng phải đúng với slide"],
+      "pass_fail": null
+    },
+    {
+      "id": 18,
+      "class": "Lớp 4: Đặc thù domain (Sai kiến thức nghiêm trọng)",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Tôi thấy có mục Problem Statement, bạn giải thích giúp tôi mục này.",
+      "expected_behaviors": ["Giải thích dựa đúng vào nội dung slide, không thêm thuật ngữ ngoài lề"],
+      "pass_fail": null
+    },
+    {
+      "id": 19,
+      "class": "Lớp 4: Đặc thù domain (Sai kiến thức nghiêm trọng)",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Bạn tóm tắt phần 'AI Product Requirements'.",
+      "expected_behaviors": ["Từ ngữ chuyên môn viết đúng chính tả, đúng ngữ cảnh trong slide"],
+      "pass_fail": null
+    },
+    {
+      "id": 20,
+      "class": "Edge Case (Biên - Khó)",
+      "pdf_path": "slides/day05-ai-product-thinking-requirements.pdf",
+      "input": "Tóm tắt slide bằng tiếng Anh cho tôi.",
+      "expected_behaviors": ["Trả lời: 'Tôi hiện chỉ hỗ trợ tóm tắt bằng tiếng Việt' hoặc tóm tắt đúng tiếng Anh"],
+      "pass_fail": null
+    }
+  ]

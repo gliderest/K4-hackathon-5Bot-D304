@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VLearn AI Tutor - Tóm tắt Slide</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Giả lập thanh Sidebar bên trái -->
+    <div class="sidebar">
+        <div class="logo">VLearn</div>
+        <div class="menu-item">📚 Khoá học của tôi</div>
+        <div class="menu-item active">📄 Day 5 - AI Product Thinking</div>
+        <div class="menu-item">📄 Day 4 - Prompt Engineering</div>
+    </div>
+
+    <!-- Giả lập vùng nội dung chính bên phải -->
+    <div class="main-content">
+        <!-- Thanh công cụ trên cùng -->
+        <div class="toolbar">
+            <div class="file-info">day05-ai-product-thinking-requirements.pdf</div>
+            <!-- ĐÂY LÀ NÚT BẤM CỦA BẠN -->
+            <button id="btnSummarize" class="summarize-btn">🤖 Tóm tắt Slide</button>
+        </div>
+
+        <!-- Giả lập vùng xem Slide PDF (Hiện ảnh demo) -->
+        <div class="pdf-viewer">
+            <div class="slide-mock">
+                <h3>Slide: AI Product Thinking</h3>
+                <p>Trang 4/44</p>
+                <div class="content-placeholder">
+                    (Nội dung slide PDF đang hiển thị ở đây)
+                </div>
+            </div>
+        </div>
+
+        <!-- Hộp chat AI Tutor (Ở góc phải) -->
+        <div class="ai-chat-box" id="chatBox">
+            <div class="chat-header">
+                <span>🤖 VLearn Tutor</span>
+                <span style="font-size: 12px; color: #888;">Trợ lý tóm tắt</span>
+            </div>
+            <div class="chat-body" id="chatBody">
+                <div class="message bot-message">
+                    Chào bạn! Tôi có thể giúp bạn tóm tắt slide đang mở. Hãy bấm nút "Tóm tắt Slide" ở thanh công cụ nhé.
+                </div>
+                <!-- Vùng kết quả tóm tắt sẽ được thêm vào đây bằng JS -->
+            </div>
+            <div class="chat-footer">
+                <input type="text" placeholder="Nhập câu hỏi..." disabled>
+                <button disabled>Gửi</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

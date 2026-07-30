@@ -1,0 +1,191 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    display: flex;
+    height: 100vh;
+    background-color: #f4f6f8;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    background: #ffffff;
+    border-right: 1px solid #e0e0e0;
+    padding: 20px;
+}
+.logo {
+    font-weight: bold;
+    font-size: 20px;
+    color: #007bff;
+    margin-bottom: 30px;
+}
+.menu-item {
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    color: #444;
+    cursor: pointer;
+}
+.menu-item.active {
+    background-color: #e6f0ff;
+    color: #007bff;
+    font-weight: bold;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    position: relative;
+}
+
+/* Toolbar */
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+    border-radius: 8px 8px 0 0;
+}
+.file-info {
+    color: #555;
+    font-size: 14px;
+}
+/* Nút bấm Tóm tắt */
+.summarize-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+}
+.summarize-btn:hover {
+    background: #0056b3;
+}
+.summarize-btn:disabled {
+    background: #aaa;
+    cursor: not-allowed;
+}
+
+/* PDF Viewer Mock */
+.pdf-viewer {
+    flex: 1;
+    background: #ffffff;
+    margin-top: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.slide-mock {
+    width: 80%;
+    height: 80%;
+    background: #f9f9f9;
+    border: 1px dashed #ccc;
+    padding: 30px;
+    text-align: center;
+}
+.content-placeholder {
+    margin-top: 20px;
+    color: #888;
+}
+
+/* AI Chat Box (Góc phải) */
+.ai-chat-box {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 400px;
+    height: 500px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+}
+.chat-header {
+    padding: 15px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.chat-body {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #fafbfc;
+}
+.message {
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    border-radius: 8px;
+    max-width: 90%;
+    line-height: 1.5;
+    font-size: 14px;
+}
+.bot-message {
+    background: #e9ecef;
+    align-self: flex-start;
+    border-radius: 8px 8px 8px 0;
+}
+.user-message {
+    background: #007bff;
+    color: white;
+    align-self: flex-end;
+    margin-left: auto;
+    border-radius: 8px 8px 0 8px;
+}
+.summary-response {
+    background: #fff;
+    border: 1px solid #007bff;
+    border-left: 4px solid #007bff;
+    padding: 15px;
+    white-space: pre-wrap;
+    border-radius: 8px;
+}
+.chat-footer {
+    padding: 10px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    gap: 10px;
+}
+.chat-footer input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    outline: none;
+}
+.chat-footer button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+}
+
+/* Animation Loading */
+.loading-dots {
+    color: #007bff;
+    font-style: italic;
+}

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VLearn Adaptive Tutor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- CỘT 1: DANH SÁCH HỌC LIỆU -->
+    <div class="sidebar">
+        <h2>Học liệu môn học</h2>
+        <br>
+        <div class="folder">
+            <div class="folder-title">Day04 - Multi-Agent Systems</div>
+            <div class="file-item" onclick="selectLesson('day04', this, 'day04-multi-agent-system.pdf')">
+                📄 day04-multi-agent-system.pdf
+            </div>
+        </div>
+
+        <div class="folder">
+            <div class="folder-title">Day05 - AI Product Thinking <span class="badge">STUDYING</span></div>
+            <div class="file-item active" onclick="selectLesson('day05', this, 'day05-ai-product-thinking-requirements.pdf')">
+                📄 day05-ai-product-thinking.pdf
+            </div>
+        </div>
+    </div>
+
+    <!-- CỘT 2: NỘI DUNG TÀI LIỆU -->
+    <div class="main-content">
+        <div class="doc-header">
+            <div>
+                <h3 id="docTitleDisplay">day05-ai-product-thinking-requirements.pdf (Trang 3 / 44)</h3>
+            </div>
+            <!-- Nút tóm tắt được đặt ở đây -->
+            <button onclick="handleSummarize()" style="background:#2563eb;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:bold;">🤖 Tóm tắt Slide</button>
+        </div>
+        
+        <div class="doc-body" id="docBodyContent">
+            <h4>Mục tiêu Ngày 5 - AI Product Thinking</h4>
+            <br>
+            <p>1. Hiểu khác biệt giữa <span class="highlight-text">AI product</span> và software feature thông thường.</p>
+            <p>2. Biết cách chuyển user needs thành requirements đo được.</p>
+            <p>3. Viết PRD và Risk Register.</p>
+            <br>
+            <p><em>Ghi chú: Bài học này kế thừa khái niệm Multi-agent system ở Day04.</em></p>
+        </div>
+    </div>
+
+    <!-- CỘT 3: CHATBOT TUTOR -->
+    <div class="chat-panel">
+        <div class="chat-header">🤖 VLearn Adaptive Tutor</div>
+        
+        <div class="chat-history" id="chatHistory">
+            <div class="msg ai">
+                Xin chào! Tôi có thể tóm tắt tài liệu đang mở hoặc kết nối kiến thức với bài học cũ giúp bạn. Hãy bấm nút "Tóm tắt Slide" ở trên.
+            </div>
+        </div>
+
+        <div class="quick-actions">
+            <button class="btn-chip" onclick="handleSummarize()">⚡ Tóm tắt bài đang mở</button>
+            <button class="btn-chip" onclick="handleLinkOld()">🔗 Nối kiến thức bài cũ</button>
+        </div>
+
+        <div class="chat-input-box">
+            <input type="text" id="userInput" placeholder="Nhập câu hỏi..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()">Gửi</button>
+        </div>
+    </div>
+
+    <!-- Import JS dạng Module -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>
