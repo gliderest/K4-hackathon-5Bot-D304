@@ -1,11 +1,12 @@
 # Mini Hackathon AI Project Repository
 
 ## Thông tin thành viên
-- Thành viên 1: [Mã HV] [Họ và tên] - Trách nhiệm: [Phân công cụ thể]
-- Thành viên 2: [Mã HV] [Họ và tên] - Trách nhiệm: [Phân công cụ thể]
-- Thành viên 3: [Mã HV] [Họ và tên] - Trách nhiệm: [Phân công cụ thể]
-- Thành viên 4: [Mã HV] [Họ và tên] - Trách nhiệm: [Phân công cụ thể]
-- Thành viên 5: [Mã HV] [Họ và tên] - Trách nhiệm: [Phân công cụ thể] (nếu có)
+- Thành viên 1: 2A202601850 Nguyễn Tiến Đạt - Trách nhiệm: Demo Preparation
+- Thành viên 2: 2A202601614 Tống Tiến Mạnh - Trách nhiệm: Prompt Engineering
+- Thành viên 3: 2A202601126 Bùi Thái Sơn - Trách nhiệm: Code/Prototype
+- Thành viên 4: 2A202601526 Nguyễn Công Đạt - Trách nhiệm: Spec & Evidence
+- Thành viên 5: 2A202601580 Nguyễn Văn Thắng - Trách nhiệm: Validation & User Testing
+
 
 ## Phân công việc
 - **Spec & Evidence**: [Tên thành viên]
