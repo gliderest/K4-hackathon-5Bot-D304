@@ -7,6 +7,15 @@ from openai import OpenAI
 from backend.app.core.config import Settings
 
 
+OPENAI_COMPATIBLE_EMBEDDING_PROVIDERS = {
+    "openai",
+    "shopaikey",
+    "openai_compatible",
+    "openai-compatible",
+    "custom",
+}
+
+
 def cosine_similarity(left: list[float], right: list[float]) -> float:
     if not left or not right or len(left) != len(right):
         return 0.0
@@ -21,27 +30,52 @@ def cosine_similarity(left: list[float], right: list[float]) -> float:
 class OpenAIEmbeddingService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        provider = settings.ai_provider.lower()
-        self.enabled = (
-            provider in {"openai", "openrouter"}
-            and bool(settings.ai_api_key)
-            and bool(settings.embedding_model)
-        )
+        provider = settings.embedding_provider.strip().casefold()
+        if not provider and settings.ai_provider.strip().casefold() == "openai":
+            provider = "openai"
         self.provider = provider
+        self.api_key = self._resolve_api_key()
+        self.model = self._resolve_model()
+        self.enabled = (
+            self.provider in OPENAI_COMPATIBLE_EMBEDDING_PROVIDERS
+            and bool(self.api_key)
+            and bool(self.model)
+        )
         self._client = self._build_client() if self.enabled else None
 
     def _build_client(self) -> OpenAI:
-        kwargs: dict[str, str] = {"api_key": self.settings.ai_api_key}
+        kwargs: dict[str, str] = {"api_key": self.api_key}
         base_url = self._resolve_base_url()
         if base_url:
             kwargs["base_url"] = base_url
         return OpenAI(**kwargs)
 
+    def _resolve_api_key(self) -> str:
+        if self.settings.embedding_api_key:
+            return self.settings.embedding_api_key
+        if self.provider and self.provider == self.settings.ai_provider.strip().casefold():
+            return self.settings.ai_api_key
+        if self.provider == "openai" and self.settings.ai_provider.strip().casefold() == "openai":
+            return self.settings.ai_api_key
+        return ""
+
+    def _resolve_model(self) -> str:
+        model = self.settings.embedding_model.strip()
+        if self.provider in OPENAI_COMPATIBLE_EMBEDDING_PROVIDERS and model.startswith("openai/"):
+            return model.removeprefix("openai/")
+        return model
+
     def _resolve_base_url(self) -> str:
-        if self.settings.ai_base_url:
-            return self.settings.ai_base_url
-        if self.provider == "openrouter":
-            return "https://openrouter.ai/api/v1"
+        if self.settings.embedding_base_url.strip():
+            return self.settings.embedding_base_url.strip()
+        if (
+            self.provider
+            and self.provider == self.settings.ai_provider.strip().casefold()
+            and self.settings.ai_base_url.strip()
+        ):
+            return self.settings.ai_base_url.strip()
+        if self.provider == "shopaikey":
+            return "https://api.shopaikey.com/v1"
         return ""
 
     async def embed_texts(self, texts: Iterable[str]) -> list[list[float]]:
@@ -59,7 +93,7 @@ class OpenAIEmbeddingService:
         for start in range(0, len(texts), batch_size):
             batch = texts[start : start + batch_size]
             response = self._client.embeddings.create(
-                model=self.settings.embedding_model,
+                model=self.model,
                 input=batch,
             )
             vectors.extend([item.embedding for item in response.data])

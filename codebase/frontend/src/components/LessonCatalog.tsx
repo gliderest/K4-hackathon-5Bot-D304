@@ -44,6 +44,9 @@ export function LessonCatalog({
   const [stagedDocument, setStagedDocument] = useState<StagedAdditionalDocument | null>(null);
   const [isSavingDocument, setIsSavingDocument] = useState(false);
   const [documentError, setDocumentError] = useState<string | null>(null);
+  const isScriptGroupActive = Boolean(selectedLessonId);
+  const isSlideGroupActive = Boolean(selectedSlideId);
+  const isAdditionalGroupActive = Boolean(selectedAdditionalDocumentId || stagedDocument);
 
   async function handleStageDocument(file: File | null) {
     if (!file) return;
@@ -90,8 +93,11 @@ export function LessonCatalog({
 
       <section className="catalog-content" aria-label="Danh mục tài liệu khóa học">
         <div className="catalog-group">
-          <div className="catalog-source-frame">
-            <h2 className="catalog-group-title">Script bài giảng</h2>
+          <div className={`catalog-source-frame ${isScriptGroupActive ? "is-active" : ""}`} tabIndex={0}>
+            <div className="catalog-group-heading">
+              <h2 className="catalog-group-title">Script bài giảng</h2>
+              <span className="catalog-group-count">{lessons.length}</span>
+            </div>
             <div className="lesson-list">
               {lessons.map((lesson) => (
                 <button key={lesson.lesson_id} className={`lesson-card ${lesson.lesson_id === selectedLessonId ? "is-selected" : ""}`} onClick={() => onSelectLesson(lesson.lesson_id)} type="button">
@@ -105,8 +111,11 @@ export function LessonCatalog({
         </div>
 
         <div className="catalog-group">
-          <div className="catalog-source-frame">
-            <h2 className="catalog-group-title">Slide</h2>
+          <div className={`catalog-source-frame ${isSlideGroupActive ? "is-active" : ""}`} tabIndex={0}>
+            <div className="catalog-group-heading">
+              <h2 className="catalog-group-title">Slides</h2>
+              <span className="catalog-group-count">{slides.length}</span>
+            </div>
             <div className="lesson-list slide-list">
               {slides.map((slide) => (
                 <button key={slide.slide_id} className={`lesson-card ${slide.slide_id === selectedSlideId ? "is-selected" : ""}`} onClick={() => onSelectSlide(slide)} type="button">
@@ -120,9 +129,12 @@ export function LessonCatalog({
         </div>
 
         <div className="catalog-group additional-documents-group">
-          <div className="catalog-source-frame">
+          <div className={`catalog-source-frame ${isAdditionalGroupActive ? "is-active" : ""}`} tabIndex={0}>
             <div className="additional-document-heading">
-              <h2 className="catalog-group-title">Tài liệu thêm</h2>
+              <div className="catalog-group-heading">
+                <h2 className="catalog-group-title">Tài liệu thêm</h2>
+                <span className="catalog-group-count">{additionalDocuments.length}</span>
+              </div>
               <label className="add-document-button">Thêm tài liệu<input type="file" accept=".pdf,.docx,.txt,.md" onChange={(event) => void handleStageDocument(event.target.files?.[0] ?? null)} /></label>
             </div>
             {stagedDocument ? <div className="staged-document-chip"><span>📎 {stagedDocument.file_name}</span><span className="staged-document-actions"><button type="button" onClick={() => void saveStagedDocument()} disabled={isSavingDocument}>{isSavingDocument ? "Đang lưu" : "Lưu"}</button><button type="button" onClick={() => void cancelStagedDocument()} disabled={isSavingDocument}>Hủy</button></span></div> : null}

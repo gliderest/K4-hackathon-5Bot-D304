@@ -38,6 +38,20 @@ class SqliteChatHistoryStore:
                 )
                 """
             )
+            await connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS chat_messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    conversation_id TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    citations_json TEXT NOT NULL DEFAULT '[]',
+                    tool_trace_json TEXT NOT NULL DEFAULT '[]',
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (conversation_id) REFERENCES chat_conversations(conversation_id)
+                )
+                """
+            )
             cursor = await connection.execute("PRAGMA table_info(chat_messages)")
             message_columns = {row[1] for row in await cursor.fetchall()}
             if "tool_trace_json" not in message_columns:
@@ -47,19 +61,6 @@ class SqliteChatHistoryStore:
                     ADD COLUMN tool_trace_json TEXT NOT NULL DEFAULT '[]'
                     """
                 )
-            await connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS chat_messages (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    conversation_id TEXT NOT NULL,
-                    role TEXT NOT NULL,
-                    content TEXT NOT NULL,
-                    citations_json TEXT NOT NULL DEFAULT '[]',
-                    created_at TEXT NOT NULL,
-                    FOREIGN KEY (conversation_id) REFERENCES chat_conversations(conversation_id)
-                )
-                """
-            )
             await connection.execute(
                 """
                 CREATE INDEX IF NOT EXISTS idx_chat_conversations_learner

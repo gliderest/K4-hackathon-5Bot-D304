@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
 
 import { getConversation, getConversations, sendChatStream, uploadDocument } from "../services/api";
 import type { ChatResponse, Citation, ConversationSummary, CurrentDocument, ToolTraceEvent, UploadResponse } from "../types/api";
@@ -148,6 +148,13 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
     }
   }
 
+  function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+    event.preventDefault();
+    if (isSending || !message.trim()) return;
+    event.currentTarget.form?.requestSubmit();
+  }
+
   async function handleUpload(file: File | null) {
     if (!file) return;
     setError(null);
@@ -172,13 +179,47 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
     <>
       <header className="chat-header">
         <p className="eyebrow">AI Tutor</p>
-        <div className="chat-title-row"><h2>Cross-Lesson Chat</h2><button className="history-toggle" type="button" onClick={() => setIsHistoryOpen((value) => !value)}>Lịch sử</button></div>
+        <div className="chat-title-row">
+          <h2>Cross-Lesson Chat</h2>
+          <div className="chat-header-actions">
+            <button
+              className="new-chat-button chat-action-button"
+              type="button"
+              aria-label="Tạo cuộc trò chuyện mới"
+              title="Tạo cuộc trò chuyện mới"
+              onClick={startNewConversation}
+            >
+              +
+            </button>
+            <div className="history-dropdown">
+              <button
+                className="history-toggle chat-action-button"
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={isHistoryOpen}
+                onClick={() => setIsHistoryOpen((value) => !value)}
+              >
+                Lịch sử
+              </button>
+              {isHistoryOpen ? (
+                <section className="history-panel" role="menu" aria-label="Lịch sử hội thoại">
+                  {conversations.length ? conversations.map((conversation) => (
+                    <button
+                      key={conversation.conversation_id}
+                      className={`history-item ${conversation.conversation_id === conversationId ? "is-active" : ""}`}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => void openConversation(conversation.conversation_id)}
+                    >
+                      {conversation.title}
+                    </button>
+                  )) : <p className="history-empty">Chưa có cuộc hội thoại nào.</p>}
+                </section>
+              ) : null}
+            </div>
+          </div>
+        </div>
       </header>
-
-      {isHistoryOpen ? <section className="history-panel">
-        <button className="new-chat-button" type="button" onClick={startNewConversation}>+ Cuộc trò chuyện mới</button>
-        {conversations.length ? conversations.map((conversation) => <button key={conversation.conversation_id} className={`history-item ${conversation.conversation_id === conversationId ? "is-active" : ""}`} type="button" onClick={() => void openConversation(conversation.conversation_id)}>{conversation.title}</button>) : <p className="history-empty">Chưa có cuộc hội thoại nào.</p>}
-      </section> : null}
 
       <section className="chat-messages">
         {chatTurns.map((turn) => {
@@ -252,6 +293,7 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
               placeholder="Hỏi về lesson, slide, transcript..."
               value={message}
               onChange={(event) => setMessage(event.target.value)}
+              onKeyDown={handleComposerKeyDown}
             />
           </div>
 

@@ -35,6 +35,11 @@ class CurrentDocument(BaseModel):
     lesson_id: str | None = None
 
 
+class ChatHistoryMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
 class ChatRequest(BaseModel):
     learner_id: str
     course_id: str
@@ -43,6 +48,7 @@ class ChatRequest(BaseModel):
     current_document: CurrentDocument | None = None
     uploaded_document_ids: list[str] = Field(default_factory=list)
     conversation_id: str | None = None
+    conversation_history: list[ChatHistoryMessage] = Field(default_factory=list)
 
 
 class ChatResponse(BaseModel):

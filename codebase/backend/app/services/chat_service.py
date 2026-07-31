@@ -3,8 +3,18 @@ import json
 from collections.abc import AsyncIterator
 
 from backend.app.agent.tutor_agent import TutorAgent
-from backend.app.schemas.chat import ChatRequest, ChatResponse, ToolTraceEvent
+from backend.app.schemas.chat import (
+    ChatHistoryMessage,
+    ChatRequest,
+    ChatResponse,
+    ToolTraceEvent,
+)
 from backend.app.memory.chat_history_store import SqliteChatHistoryStore
+
+
+HISTORY_MESSAGE_LIMIT = 12
+HISTORY_CHAR_LIMIT = 2600
+HISTORY_ITEM_CHAR_LIMIT = 520
 
 
 class ChatService:
@@ -51,12 +61,23 @@ class ChatService:
             first_message=request.message,
             conversation_id=request.conversation_id,
         )
+        conversation = await self.history_store.get_conversation(
+            conversation_id,
+            request.learner_id,
+            request.course_id,
+        )
+        conversation_history = self._compact_history(conversation.messages if conversation else [])
         await self.history_store.append_message(
             conversation_id=conversation_id,
             role="user",
             content=request.message,
         )
-        return conversation_id, request.model_copy(update={"conversation_id": conversation_id})
+        return conversation_id, request.model_copy(
+            update={
+                "conversation_id": conversation_id,
+                "conversation_history": conversation_history,
+            }
+        )
 
     async def _finish_response(
         self,
@@ -76,3 +97,25 @@ class ChatService:
     @staticmethod
     def _as_sse(event_name: str, payload: dict) -> str:
         return f"event: {event_name}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+    @staticmethod
+    def _compact_history(messages: list) -> list[ChatHistoryMessage]:
+        selected: list[ChatHistoryMessage] = []
+        remaining = HISTORY_CHAR_LIMIT
+
+        for message in reversed(messages[-HISTORY_MESSAGE_LIMIT:]):
+            content = " ".join(str(message.content).split()).strip()
+            if not content:
+                continue
+            if len(content) > HISTORY_ITEM_CHAR_LIMIT:
+                content = content[:HISTORY_ITEM_CHAR_LIMIT].rsplit(" ", 1)[0].strip() + "..."
+            if len(content) > remaining:
+                if selected:
+                    break
+                content = content[:remaining].rsplit(" ", 1)[0].strip() + "..."
+            selected.append(ChatHistoryMessage(role=message.role, content=content))
+            remaining -= len(content)
+            if remaining <= 0:
+                break
+
+        return list(reversed(selected))

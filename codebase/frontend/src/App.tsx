@@ -29,6 +29,7 @@ export default function App() {
   const [selectedSlideViewerPath, setSelectedSlideViewerPath] = useState<string | null>(null);
   const [selectedExternalCitation, setSelectedExternalCitation] = useState<Citation | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isCatalogOpen, setIsCatalogOpen] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(true);
 
   useEffect(() => {
@@ -169,23 +170,54 @@ export default function App() {
       ? { type: "slide", slideId: selectedSlide.slide_id, title: selectedSlide.title, viewerPath: selectedSlideViewerPath ?? selectedSlide.slide_viewer_path }
       : null;
 
+  const layoutClassName = [
+    "three-pane-layout",
+    isCatalogOpen ? "" : "catalog-is-hidden",
+    isChatOpen ? "" : "chat-is-hidden",
+  ].filter(Boolean).join(" ");
+
   return (
-    <main className={`three-pane-layout ${isChatOpen ? "" : "chat-is-hidden"}`}>
-      <aside className="pane catalog-pane">
-        <LessonCatalog
-          lessons={outline?.lessons ?? []}
-          slides={outline?.slides ?? []}
-          additionalDocuments={outline?.additional_documents ?? []}
-          progress={progress}
-          selectedLessonId={selectedLessonId}
-          selectedSlideId={selectedSlideId}
-          selectedAdditionalDocumentId={selectedAdditionalDocument?.document_id ?? null}
-          onSelectLesson={selectScript}
-          onSelectSlide={selectSlide}
-          onSelectAdditionalDocument={selectAdditionalDocument}
-          onAdditionalDocumentsChanged={() => void refreshOutline()}
-        />
-      </aside>
+    <main className={layoutClassName}>
+      {!isCatalogOpen ? (
+        <button
+          className="catalog-toggle-button catalog-toggle-floating"
+          type="button"
+          aria-label="Hiện mục lục bài giảng"
+          aria-expanded={false}
+          onClick={() => setIsCatalogOpen(true)}
+          title="Hiện mục lục"
+        >
+          <span aria-hidden="true">›</span>
+        </button>
+      ) : null}
+
+      {isCatalogOpen ? (
+        <aside className="pane catalog-pane">
+          <button
+            className="catalog-toggle-button catalog-toggle-inline"
+            type="button"
+            aria-label="Ẩn mục lục bài giảng"
+            aria-expanded={true}
+            onClick={() => setIsCatalogOpen(false)}
+            title="Ẩn mục lục"
+          >
+            <span aria-hidden="true">‹</span>
+          </button>
+          <LessonCatalog
+            lessons={outline?.lessons ?? []}
+            slides={outline?.slides ?? []}
+            additionalDocuments={outline?.additional_documents ?? []}
+            progress={progress}
+            selectedLessonId={selectedLessonId}
+            selectedSlideId={selectedSlideId}
+            selectedAdditionalDocumentId={selectedAdditionalDocument?.document_id ?? null}
+            onSelectLesson={selectScript}
+            onSelectSlide={selectSlide}
+            onSelectAdditionalDocument={selectAdditionalDocument}
+            onAdditionalDocumentsChanged={() => void refreshOutline()}
+          />
+        </aside>
+      ) : null}
 
       <section className="pane viewer-pane">
         {error ? <p className="error-text">{error}</p> : null}

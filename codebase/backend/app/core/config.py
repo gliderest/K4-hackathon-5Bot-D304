@@ -14,14 +14,19 @@ class Settings(BaseSettings):
     ai_model: str = ""
     ai_api_key: str = ""
     ai_base_url: str = ""
+    system_prompt_path: str = "./prompts/system-prompt.md"
+    agent_max_tokens: int = 250
+    embedding_provider: str = ""
     embedding_model: str = ""
+    embedding_api_key: str = ""
+    embedding_base_url: str = ""
     embedding_batch_size: int = 64
 
     web_search_provider: str = "tavily"
     web_search_api_key: str = ""
     web_search_max_results: int = 5
     web_search_timeout_seconds: float = 12.0
-    web_search_fallback_min_score: float = 0.8
+    web_search_fallback_min_score: float = 0.7
 
     course_id: str = "vlearn-hackathon"
     course_title: str = "VLearn Cross-Lesson AI Tutor"
