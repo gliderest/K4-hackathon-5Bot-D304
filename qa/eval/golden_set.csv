@@ -20,3 +20,13 @@ DE02,domain_specific_error,domain_specific_error,sample,checkpoint2.html Day05,"
 DE03,domain_specific_error,domain_specific_error,sample,checkpoint2.html Day05,"AI product chỉ là chatbot đúng không?",Day05,Không đơn giản hóa sai,day05-ai-product-thinking.pdf (Tr.3),false,false,high,sample
 EC01,edge_case,source_truth,sample,checkpoint2.html,"",day05-ai-product-thinking.pdf,Không trả lời rỗng,,true,false,medium,sample
 EC02,edge_case,out_of_scope,sample,checkpoint2.html,"!!! ???",day05-ai-product-thinking.pdf,Yêu cầu làm rõ hoặc từ chối phù hợp,,true,false,low,sample
+CL01,happy_path,source_truth,chatlog,C0002/T0959,"giải thích 4 chiến lược",,"Trả lời dựa trên học liệu và không bịa nguồn",,false,false,medium,chatlog case; nguồn gốc có câu hỏi được chọn từ slide
+CL02,happy_path,source_truth,chatlog,C0002/T0092,"kỹ thuật tối ưu prompt, cơ chế gọi tool và cách xử lý ngữ cảnh",,"Giải thích các khái niệm theo context",,false,false,medium,chatlog case
+CL03,happy_path,source_truth,chatlog,C0013/T0990,"Context là gì",,"Giải thích ngắn gọn, đúng thuật ngữ",,false,false,medium,chatlog case
+CL04,happy_path,domain_specific_error,chatlog,C0015/T0811,"Design Pattern ReAct là gì có lưu ý gì về nó?",,"Phân biệt đúng ReAct và các pattern liên quan",,false,false,high,chatlog case
+CL05,happy_path,domain_specific_error,chatlog,C0043/T0779,"Phân biệt chatbot và agent",,"Nêu đúng điểm khác nhau theo tài liệu",,false,false,critical,chatlog case
+CL06,happy_path,source_truth,chatlog,C0032/T1087,"tool calling là gì",,"Trả lời theo học liệu, kèm giới hạn nếu thiếu căn cứ",,false,false,medium,chatlog case
+CL07,happy_path,domain_specific_error,chatlog,C0565/T0298,"PRD là gì",,"Giải thích đúng khái niệm PRD trong ngữ cảnh khóa học",,false,false,high,chatlog case
+CL08,happy_path,domain_specific_error,chatlog,C0568/T0457,"Deep Learning khác Machine Learning truyền thống ở chỗ nào?",,"Phân biệt chính xác hai khái niệm",,false,false,critical,chatlog case
+CL09,happy_path,source_truth,chatlog,C0579/T0174,"AI, ML, Deep Learning, GenAI, LLM nằm ở đâu trong cùng một hệ?",,"Giải thích quan hệ phân cấp dựa trên nguồn",,false,false,high,chatlog case
+CL10,happy_path,domain_specific_error,chatlog,C0580/T0325,"Hiểu và giải thích được vòng lặp ReAct: Thought → Action → Observation",,"Giải thích đúng vòng lặp ReAct",,false,false,high,chatlog case
