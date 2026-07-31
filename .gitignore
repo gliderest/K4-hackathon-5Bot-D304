@@ -4,4 +4,10 @@
 /04-rubric.md
 /tham-khao/
 /docs/
+
+# Python-generated files
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
 /data/
