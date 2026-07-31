@@ -13,6 +13,7 @@ from backend.app.services.additional_document_service import AdditionalDocumentS
 from backend.app.services.document_writer import CurrentDocumentWriter
 from backend.app.tools.search_document import SearchDocumentTool
 from backend.app.tools.analyse_current_document import AnalyseCurrentDocumentTool
+from backend.app.tools.compare_document import CompareDocumentWithCourseTool
 
 
 class AppRuntime:
@@ -37,6 +38,7 @@ class AppRuntime:
         self.agent = TutorAgent(
             search_document=SearchDocumentTool(retriever=self.retriever),
             analyse_current_document=AnalyseCurrentDocumentTool(retriever=self.retriever),
+            compare_document_with_course=CompareDocumentWithCourseTool(retriever=self.retriever),
             current_document_writer=CurrentDocumentWriter(settings),
             progress_store=self.progress_store,
         )

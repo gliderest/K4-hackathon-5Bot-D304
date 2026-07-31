@@ -1,13 +1,14 @@
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
-from backend.app.agent.request_router import ToolRoute, choose_tool_route
+from backend.app.agent.request_router import ToolRoute, choose_tool_route, is_greeting
 from backend.app.memory.progress_store import SqliteProgressStore
 from backend.app.rag.citation import build_citation
 from backend.app.schemas.chat import ChatRequest, ChatResponse, ToolTraceEvent
 from backend.app.schemas.progress import LessonProgress, ProgressPatch
 from backend.app.tools.search_document import SearchDocumentTool
 from backend.app.tools.analyse_current_document import AnalyseCurrentDocumentTool
+from backend.app.tools.compare_document import CompareDocumentWithCourseTool
 from backend.app.services.document_writer import CurrentDocumentWriter
 
 
@@ -18,6 +19,7 @@ TraceCallback = Callable[[ToolTraceEvent], Awaitable[None]]
 class TutorAgent:
     search_document: SearchDocumentTool
     analyse_current_document: AnalyseCurrentDocumentTool
+    compare_document_with_course: CompareDocumentWithCourseTool
     current_document_writer: CurrentDocumentWriter
     progress_store: SqliteProgressStore
 
@@ -44,6 +46,15 @@ class TutorAgent:
             if on_trace is not None:
                 await on_trace(event)
 
+        if is_greeting(request.message):
+            return ChatResponse(
+                answer="Chào bạn! Mình có thể giúp bạn hỏi đáp và ôn tập nội dung khóa học. Bạn muốn tìm hiểu chủ đề nào?",
+                tool_trace=tool_trace,
+                confidence="high",
+                needs_clarification=False,
+                suggested_next_action=None,
+            )
+
         if len(request.message.strip()) < 8:
             return ChatResponse(
                 answer="Bạn hãy mô tả rõ hơn câu hỏi để mình tìm đúng lesson, transcript hoặc slide liên quan.",
@@ -54,6 +65,8 @@ class TutorAgent:
             )
 
         route = choose_tool_route(request.message, request.current_document)
+        if route is ToolRoute.COMPARE_DOCUMENT_WITH_COURSE:
+            return await self._compare_document_with_course(request, tool_trace, record)
         if route is ToolRoute.ANALYSE_CURRENT_DOCUMENT:
             return await self._analyse_open_document(request, tool_trace, record)
 
@@ -101,7 +114,12 @@ class TutorAgent:
             )
 
         citations = [build_citation(hit) for hit in combined_hits[:4]]
-        answer = self._compose_answer(combined_hits)
+        answer = await self.current_document_writer.write_answer(
+            question=request.message,
+            hits=combined_hits,
+        )
+        if answer is None:
+            answer = self._compose_answer(combined_hits)
         confidence = "high" if combined_hits[0].score >= 0.72 else "medium"
 
         if request.current_lesson_id:
@@ -187,10 +205,65 @@ class TutorAgent:
             suggested_next_action=None,
         )
 
+    async def _compare_document_with_course(self, request, tool_trace, record) -> ChatResponse:
+        if request.current_document is None:
+            return ChatResponse(
+                answer="Bạn hãy mở tài liệu upload cần đối chiếu trước.",
+                tool_trace=tool_trace,
+                confidence="low",
+                needs_clarification=True,
+            )
+        await record(
+            "compare_document_with_course",
+            "started",
+            f"Đang đọc tài liệu để đối chiếu: {request.current_document.title}.",
+        )
+        result = await self.compare_document_with_course.compare(
+            question=request.message,
+            document=request.current_document,
+            learner_id=request.learner_id,
+            document_ids=request.uploaded_document_ids,
+            conversation_id=request.conversation_id,
+        )
+        await record(
+            "search_document",
+            "completed",
+            f"Đã tìm {len(result.course_hits)} đoạn kiến thức khóa học liên quan.",
+            result_count=len(result.course_hits),
+        )
+        if not result.document_hits or not result.course_hits:
+            return ChatResponse(
+                answer="Mình chưa đủ dữ liệu ở tài liệu upload hoặc học liệu khóa học để đối chiếu.",
+                tool_trace=tool_trace,
+                confidence="low",
+                needs_clarification=True,
+            )
+        answer = await self.current_document_writer.write_comparison(
+            question=request.message,
+            document_title=request.current_document.title,
+            document_hits=result.document_hits,
+            course_hits=result.course_hits,
+        )
+        if answer is None:
+            answer = "Mình đã tìm thấy hai nhóm nguồn nhưng chưa thể tạo bản đối chiếu lúc này."
+        citations = [
+            build_citation(hit) for hit in [*result.document_hits[:2], *result.course_hits[:4]]
+        ]
+        return ChatResponse(
+            answer=answer,
+            citations=citations,
+            tool_trace=tool_trace,
+            confidence="high",
+            needs_clarification=False,
+        )
+
     @staticmethod
     def _select_diverse_sources(course_hits: list, upload_hits: list, limit: int) -> list:
         """Keep high-scoring results while retaining Slide and Script evidence."""
         ranked_hits = sorted([*course_hits, *upload_hits], key=lambda hit: hit.score, reverse=True)
+        if ranked_hits:
+            minimum_score = max(0.45, ranked_hits[0].score * 0.65)
+            ranked_hits = [hit for hit in ranked_hits if hit.score >= minimum_score]
         selected = []
         selected_ids = set()
         for source_type in ("slide", "transcript", "user_upload"):

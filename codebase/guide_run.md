@@ -1,25 +1,25 @@
 # Guide Run
 
-## 1. Vi tri du an
+## 1. Vị trí dự án
 
 Lam viec trong thu muc:
 
 ```powershell
-cd D:\AITHUCCHIEN\HACKATHON\K4-hackathon-5Bot-D304\codebase
+cd /Users/thangnguyenvan/K4-hackathon-5Bot-D304/codebase
 ```
 
 ## 2. Chay backend FastAPI
 
-### Buoc 1: Tao virtual environment
+### Bước 1: Tạo virtual environment
 
 ```powershell
 python -m venv .venv
 ```
 
-### Buoc 2: Kich hoat moi truong
+### Bước 2: Kích hoạt môi trường
 
 ```powershell
-.venv\Scripts\Activate.ps1
+source .venv/bin/activate
 ```
 
 Neu PowerShell chan script, chay tam:
@@ -34,31 +34,30 @@ roi kich hoat lai:
 .venv\Scripts\Activate.ps1
 ```
 
-### Buoc 3: Cai thu vien
+### Bước 3: Cài thư viện
 
 ```powershell
-pip install --upgrade pip
-pip install -r requirements.txt
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-### Buoc 4: Tao file `.env`
+### Bước 4: Tạo file `.env`
 
 Copy tu file mau:
 
 ```powershell
-Copy-Item .env.example .env
+cp .env.example .env
 ```
 
 Mac dinh hien tai app chay o che do `local`, khong bat buoc co API key.
 
-### Buoc 5: Chay backend
+### Bước 5: Chạy backend
 
 ```powershell
-$env:PYTHONPATH = (Get-Location).Path
-uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
+PYTHONPATH=. uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-### Buoc 6: Kiem tra backend
+### Bước 6: Kiểm tra backend
 
 Mo trinh duyet:
 
@@ -72,7 +71,7 @@ Neu dung, ban se thay:
 {"status":"ok"}
 ```
 
-## 3. Chay frontend React
+## 3. Chạy frontend React
 
 Mo terminal moi, van o thu muc:
 
@@ -98,7 +97,7 @@ Frontend mac dinh chay tai:
 http://localhost:5173
 ```
 
-## 4. Thu nghiem demo
+## 4. Thử nghiệm demo
 
 Sau khi backend va frontend cung dang chay:
 
@@ -151,15 +150,14 @@ Chi ho tro:
 - `.txt`
 - `.md`
 
-## 7. Lenh tat nhanh
+## 7. Lệnh tắt nhanh
 
 Backend:
 
 ```powershell
-cd D:\AITHUCCHIEN\HACKATHON\K4-hackathon-5Bot-D304\codebase
-.venv\Scripts\Activate.ps1
-$env:PYTHONPATH = (Get-Location).Path
-uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
+cd /Users/thangnguyenvan/K4-hackathon-5Bot-D304/codebase
+source .venv/bin/activate
+PYTHONPATH=. uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 Frontend:

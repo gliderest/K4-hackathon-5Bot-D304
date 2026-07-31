@@ -7,7 +7,7 @@ class ToolTraceEvent(BaseModel):
     """A user-facing activity entry for a tool call, not hidden model reasoning."""
 
     tool_name: Literal[
-        "request_router", "search_document", "analyse_current_document"
+        "request_router", "search_document", "analyse_current_document", "compare_document_with_course"
     ]
     status: Literal["started", "completed", "skipped"]
     summary: str

@@ -10,6 +10,7 @@ const toolLabels: Record<ToolTraceEvent["tool_name"], string> = {
   request_router: "request_router",
   search_document: "search_document",
   analyse_current_document: "analyse_current_document",
+  compare_document_with_course: "compare_document_with_course",
 };
 
 function createConversationId(): string {
@@ -101,6 +102,7 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
 
     const nextMessage = message.trim();
     const attachedDocumentIds = uploads.map((upload) => upload.document_id);
+    const uploadedDocument = uploads[uploads.length - 1];
     const pendingTurnId = crypto.randomUUID();
     setChatTurns((current) => [
       ...current,
@@ -118,7 +120,14 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
         course_id: courseId,
         message: nextMessage,
         current_lesson_id: currentLessonId ?? undefined,
-        current_document: currentDocument,
+        current_document: uploadedDocument
+          ? {
+              source_type: "user_upload",
+              source_id: uploadedDocument.source_id,
+              title: uploadedDocument.file_name,
+              lesson_id: "user-upload",
+            }
+          : currentDocument,
         uploaded_document_ids: attachedDocumentIds,
         conversation_id: conversationId,
       }, (traceEvent) => {
@@ -245,7 +254,7 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
           </label>
 
           <div className="composer-main">
-            {uploads.length ? <div className="attachment-chip-list">{uploads.map((upload) => <span key={upload.document_id} className="attachment-chip"><span aria-hidden="true">📎</span><span className="attachment-name">{upload.file_name}</span><button type="button" aria-label={`Gỡ ${upload.file_name}`} onClick={() => setUploads((current) => current.filter((item) => item.document_id !== upload.document_id))}>×</button></span>)}</div> : null}
+            {uploads.length ? <div className="attachment-chip-list">{uploads.map((upload) => <span key={upload.document_id} className="attachment-chip"><span aria-hidden="true">📎</span><span className="attachment-name">{upload.file_name}</span><small>Đã sẵn sàng để hỏi</small><button type="button" aria-label={`Gỡ ${upload.file_name}`} onClick={() => setUploads((current) => current.filter((item) => item.document_id !== upload.document_id))}>×</button></span>)}</div> : null}
             <textarea
               aria-label="Câu hỏi"
               placeholder="Hỏi về lesson, slide, transcript..."

@@ -7,6 +7,7 @@ from backend.app.schemas.chat import CurrentDocument
 
 class ToolRoute(str, Enum):
     ANALYSE_CURRENT_DOCUMENT = "analyse_current_document"
+    COMPARE_DOCUMENT_WITH_COURSE = "compare_document_with_course"
     SEARCH_DOCUMENT = "search_document"
     CLARIFY = "clarify"
 
@@ -48,14 +49,42 @@ CURRENT_DOCUMENT_SIGNALS = (
     "trang này",
     "nội dung này",
     "đoạn này",
+    "đang mở",
+    "đang được mở",
+    "hiện tại",
+    "hiện đang mở",
+)
+COMPARE_SIGNALS = (
+    "so sánh",
+    "đối chiếu",
+    "áp dụng đúng",
+    "áp dụng sai",
+    "điểm đúng sai",
 )
 ANALYSIS_SIGNALS = ("giải thích", "phân tích", "làm rõ", "diễn giải")
+GREETING_PHRASES = (
+    "chào",
+    "xin chào",
+    "hello",
+    "hi",
+    "hey",
+    "alo",
+)
+
+
+def is_greeting(message: str) -> bool:
+    normalized = " ".join(message.casefold().strip().split()).strip("!?.,:;~")
+    return normalized in GREETING_PHRASES or normalized.startswith(("chào ", "xin chào "))
 
 
 def choose_tool_route(message: str, current_document: CurrentDocument | None) -> ToolRoute:
     normalized = message.casefold().strip()
     if len(normalized) < 8:
         return ToolRoute.CLARIFY
+    if current_document and current_document.source_type == "user_upload" and any(
+        signal in normalized for signal in COMPARE_SIGNALS
+    ):
+        return ToolRoute.COMPARE_DOCUMENT_WITH_COURSE
     # Creation tasks use the open document as their only source. Check these
     # signals before search terms: "tạo quiz từ bài giảng" is not a request to
     # locate another lesson merely because it contains the word "bài".

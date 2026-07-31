@@ -66,6 +66,7 @@ class UploadService:
             learner_id=learner_id,
             conversation_id=conversation_id,
             document_id=document_id,
+            source_id=stored_name,
             file_name=file.filename or stored_name,
             viewer_path=f"/api/assets/uploads/{learner_id}/{conversation_id}/{stored_name}",
             chunk_count=len(chunks),

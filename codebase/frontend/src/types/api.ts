@@ -10,7 +10,7 @@ export type Citation = {
 };
 
 export type ToolTraceEvent = {
-  tool_name: "request_router" | "search_document" | "analyse_current_document";
+  tool_name: "request_router" | "search_document" | "analyse_current_document" | "compare_document_with_course";
   status: "started" | "completed" | "skipped";
   summary: string;
   result_count: number | null;
@@ -118,6 +118,7 @@ export type UploadResponse = {
   learner_id: string;
   conversation_id: string;
   document_id: string;
+  source_id: string;
   file_name: string;
   viewer_path: string;
   chunk_count: number;
