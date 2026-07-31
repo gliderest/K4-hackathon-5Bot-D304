@@ -1,15 +1,20 @@
 from dataclasses import dataclass
 
+from backend.app.agent.request_router import ToolRoute, choose_tool_route
 from backend.app.memory.progress_store import SqliteProgressStore
 from backend.app.rag.citation import build_citation
 from backend.app.schemas.chat import ChatRequest, ChatResponse
 from backend.app.schemas.progress import LessonProgress, ProgressPatch
 from backend.app.tools.search_document import SearchDocumentTool
+from backend.app.tools.analyse_current_document import AnalyseCurrentDocumentTool
+from backend.app.services.document_writer import CurrentDocumentWriter
 
 
 @dataclass(slots=True)
 class TutorAgent:
     search_document: SearchDocumentTool
+    analyse_current_document: AnalyseCurrentDocumentTool
+    current_document_writer: CurrentDocumentWriter
     progress_store: SqliteProgressStore
 
     async def run(self, request: ChatRequest) -> ChatResponse:
@@ -21,8 +26,12 @@ class TutorAgent:
                 suggested_next_action=None,
             )
 
-        # current_lesson_id only records progress. Retrieval always searches the
-        # complete course corpus, so a concept can be found in any Day/Lesson.
+        route = choose_tool_route(request.message, request.current_document)
+        if route is ToolRoute.ANALYSE_CURRENT_DOCUMENT:
+            return await self._analyse_open_document(request)
+
+        # current_lesson_id only records progress. Cross-document retrieval runs
+        # only when the learner asks to find knowledge outside the open document.
         search_result = await self.search_document.search(
             keyword=request.message,
             course_id=request.course_id,
@@ -73,6 +82,46 @@ class TutorAgent:
             suggested_next_action=None,
         )
 
+    async def _analyse_open_document(self, request: ChatRequest) -> ChatResponse:
+        if request.current_document is None:
+            return ChatResponse(
+                answer="Bạn hãy mở tài liệu cần tóm tắt hoặc giải thích trước, rồi gửi lại câu hỏi.",
+                confidence="low",
+                needs_clarification=True,
+                suggested_next_action=None,
+            )
+
+        analysis = await self.analyse_current_document.analyse(
+            document=request.current_document,
+            learner_id=request.learner_id,
+            document_ids=request.uploaded_document_ids,
+        )
+        if not analysis.chunks:
+            return ChatResponse(
+                answer="Mình chưa đọc được nội dung của tài liệu đang mở. Bạn thử chọn lại tài liệu hoặc tải lại trang.",
+                confidence="low",
+                needs_clarification=True,
+                suggested_next_action=None,
+            )
+
+        answer = await self.current_document_writer.write(
+            question=request.message,
+            document_title=request.current_document.title,
+            hits=analysis.chunks,
+        )
+        if answer is None:
+            answer = self._compose_current_document_fallback(
+                title=request.current_document.title,
+                hits=analysis.chunks,
+            )
+        return ChatResponse(
+            answer=answer,
+            citations=[],
+            confidence="high",
+            needs_clarification=False,
+            suggested_next_action=None,
+        )
+
     @staticmethod
     def _select_diverse_sources(course_hits: list, upload_hits: list, limit: int) -> list:
         """Keep high-scoring results while retaining Slide and Script evidence."""
@@ -108,4 +157,16 @@ class TutorAgent:
         return "\n".join([
             "Mình đã tìm trong toàn bộ Slide và Script của khóa học. Các nguồn phù hợp nhất là:",
             *evidence_lines,
+        ])
+
+    @staticmethod
+    def _compose_current_document_fallback(title: str, hits: list) -> str:
+        points = []
+        for hit in hits[:6]:
+            text = hit.chunk.text.replace("\n", " ").strip()
+            text = text.replace("Nội dung slide: ", "")
+            points.append(text[:240] + ("..." if len(text) > 240 else ""))
+        return "\n".join([
+            f"Tóm lược tài liệu đang mở — {title}:",
+            "\n".join(f"- {point}" for point in points),
         ])

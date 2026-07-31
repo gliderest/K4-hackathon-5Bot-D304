@@ -50,6 +50,33 @@ class LocalRetriever:
             vectors=vectors,
         )
 
+    async def get_document_chunks(
+        self,
+        source_type: str,
+        source_id: str,
+        learner_id: str,
+        document_ids: list[str],
+    ) -> list[SourceChunk]:
+        """Return chunks from one named source, without searching other documents."""
+        if source_type in {"slide", "transcript"}:
+            chunks = [
+                chunk
+                for chunk in self.corpus.course_chunks
+                if chunk.source_type == source_type and chunk.source_file == source_id
+            ]
+            # Page overviews contain the complete page and avoid duplicate block text
+            # when the learner asks to summarize the currently open PDF.
+            if source_type == "slide":
+                overview_chunks = [chunk for chunk in chunks if chunk.chunk_id.endswith(":overview")]
+                return overview_chunks or chunks
+            return chunks
+
+        upload_chunks, _ = await self._load_upload_chunks(
+            learner_id=learner_id,
+            document_ids=document_ids,
+        )
+        return [chunk for chunk in upload_chunks if chunk.source_file == source_id]
+
     async def _load_upload_chunks(
         self,
         learner_id: str,

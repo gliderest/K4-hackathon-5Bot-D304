@@ -7,7 +7,9 @@ from backend.app.rag.retriever import LocalRetriever
 from backend.app.services.chat_service import ChatService
 from backend.app.services.course_service import CourseService
 from backend.app.services.upload_service import UploadService
+from backend.app.services.document_writer import CurrentDocumentWriter
 from backend.app.tools.search_document import SearchDocumentTool
+from backend.app.tools.analyse_current_document import AnalyseCurrentDocumentTool
 
 
 class AppRuntime:
@@ -26,6 +28,8 @@ class AppRuntime:
         )
         self.agent = TutorAgent(
             search_document=SearchDocumentTool(retriever=self.retriever),
+            analyse_current_document=AnalyseCurrentDocumentTool(retriever=self.retriever),
+            current_document_writer=CurrentDocumentWriter(settings),
             progress_store=self.progress_store,
         )
         self.chat_service = ChatService(agent=self.agent)

@@ -30,6 +30,7 @@ class LessonDetailResponse(BaseModel):
     lesson_id: str
     title: str
     transcript_markdown: str
+    transcript_file: str
     transcript_viewer_path: str
     slide_file: str | None = None
     slide_viewer_path: str | None = None

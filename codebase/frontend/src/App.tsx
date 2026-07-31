@@ -9,6 +9,7 @@ import type {
   CourseOutlineResponse,
   CourseSlide,
   Citation,
+  CurrentDocument,
   LessonDetailResponse,
   ProgressSnapshot,
 } from "./types/api";
@@ -112,6 +113,27 @@ export default function App() {
   }
 
   const selectedSlide = outline?.slides.find((slide) => slide.slide_id === selectedSlideId);
+  const currentDocument: CurrentDocument | undefined = selectedExternalCitation
+    ? {
+        source_type: selectedExternalCitation.source_type,
+        source_id: selectedExternalCitation.source_id,
+        title: selectedExternalCitation.label,
+        lesson_id: selectedExternalCitation.lesson_id,
+      }
+    : selectedLesson
+      ? {
+          source_type: "transcript",
+          source_id: selectedLesson.transcript_file,
+          title: selectedLesson.title,
+          lesson_id: selectedLesson.lesson_id,
+        }
+      : selectedSlide
+        ? {
+            source_type: "slide",
+            source_id: selectedSlide.slide_file,
+            title: selectedSlide.title,
+          }
+        : undefined;
   const viewerContent: ViewerContent | null = selectedExternalCitation
     ? { type: "document", title: selectedExternalCitation.label, viewerPath: selectedExternalCitation.viewer_path }
     : selectedLesson
@@ -157,6 +179,7 @@ export default function App() {
             courseId={COURSE_ID}
             currentLessonId={selectedLessonId}
             onOpenCitation={openCitation}
+            currentDocument={currentDocument}
           />
         </aside>
       ) : null}

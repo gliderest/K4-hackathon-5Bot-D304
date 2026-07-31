@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 
 import { sendChat, uploadDocument } from "../services/api";
-import type { ChatResponse, Citation, UploadResponse } from "../types/api";
+import type { ChatResponse, Citation, CurrentDocument, UploadResponse } from "../types/api";
 import { CitationLink } from "./CitationLink";
 
 type TutorChatProps = {
@@ -9,6 +9,7 @@ type TutorChatProps = {
   courseId: string;
   currentLessonId: string | null;
   onOpenCitation: (citation: Citation) => void;
+  currentDocument?: CurrentDocument;
 };
 
 type ChatTurn = {
@@ -17,7 +18,7 @@ type ChatTurn = {
   response?: ChatResponse;
 };
 
-export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation }: TutorChatProps) {
+export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation, currentDocument }: TutorChatProps) {
   const [message, setMessage] = useState("");
   const [chatTurns, setChatTurns] = useState<ChatTurn[]>([
     {
@@ -50,6 +51,7 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
         course_id: courseId,
         message: nextMessage,
         current_lesson_id: currentLessonId ?? undefined,
+        current_document: currentDocument,
         uploaded_document_ids: uploads.map((upload) => upload.document_id),
       });
       setChatTurns((current) => [

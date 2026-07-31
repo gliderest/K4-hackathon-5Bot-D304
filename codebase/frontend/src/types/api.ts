@@ -14,7 +14,15 @@ export type ChatRequest = {
   course_id: string;
   message: string;
   current_lesson_id?: string;
+  current_document?: CurrentDocument;
   uploaded_document_ids?: string[];
+};
+
+export type CurrentDocument = {
+  source_type: "slide" | "transcript" | "user_upload";
+  source_id: string;
+  title: string;
+  lesson_id?: string | null;
 };
 
 export type ChatResponse = {
@@ -54,6 +62,7 @@ export type LessonDetailResponse = {
   lesson_id: string;
   title: string;
   transcript_markdown: string;
+  transcript_file: string;
   transcript_viewer_path: string;
   slide_file: string | null;
   slide_viewer_path: string | null;

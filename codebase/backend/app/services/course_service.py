@@ -73,6 +73,7 @@ class CourseService:
             lesson_id=lesson.lesson_id,
             title=lesson.title,
             transcript_markdown=transcript_body(lesson.transcript_markdown),
+            transcript_file=lesson.transcript_file,
             transcript_viewer_path=f"/api/assets/transcripts/{lesson.transcript_file}",
             slide_file=lesson.source_slide_file,
             slide_viewer_path=(

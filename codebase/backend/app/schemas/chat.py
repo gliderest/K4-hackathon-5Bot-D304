@@ -14,11 +14,19 @@ class Citation(BaseModel):
     score: float | None = None
 
 
+class CurrentDocument(BaseModel):
+    source_type: Literal["slide", "transcript", "user_upload"]
+    source_id: str
+    title: str
+    lesson_id: str | None = None
+
+
 class ChatRequest(BaseModel):
     learner_id: str
     course_id: str
     message: str = Field(min_length=1, max_length=4000)
     current_lesson_id: str | None = None
+    current_document: CurrentDocument | None = None
     uploaded_document_ids: list[str] = Field(default_factory=list)
 
 
