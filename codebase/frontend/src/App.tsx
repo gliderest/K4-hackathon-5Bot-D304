@@ -4,15 +4,14 @@ import { LessonCatalog } from "./components/LessonCatalog";
 import { LessonViewer } from "./components/LessonViewer";
 import type { ViewerContent } from "./components/LessonViewer";
 import { TutorChat } from "./components/TutorChat";
-import { getLesson, getOutline, getProgress } from "./services/api";
+import { getLesson, getOutline } from "./services/api";
 import type {
   CourseOutlineResponse,
-  AdditionalDocument,
   CourseSlide,
   Citation,
   CurrentDocument,
   LessonDetailResponse,
-  ProgressSnapshot,
+  UploadResponse,
 } from "./types/api";
 
 const LEARNER_ID = "demo-learner";
@@ -20,10 +19,16 @@ const COURSE_ID = "vlearn-hackathon";
 
 export default function App() {
   const [outline, setOutline] = useState<CourseOutlineResponse | null>(null);
-  const [progress, setProgress] = useState<ProgressSnapshot | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [selectedSlideId, setSelectedSlideId] = useState<string | null>(null);
-  const [selectedAdditionalDocument, setSelectedAdditionalDocument] = useState<AdditionalDocument | null>(null);
+  const [uploadHistory, setUploadHistory] = useState<UploadResponse[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("vlearn-upload-history") ?? "[]") as UploadResponse[];
+    } catch {
+      return [];
+    }
+  });
+  const [selectedUpload, setSelectedUpload] = useState<UploadResponse | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<LessonDetailResponse | null>(null);
   const [selectedTranscriptSegmentId, setSelectedTranscriptSegmentId] = useState<string | null>(null);
   const [selectedSlideViewerPath, setSelectedSlideViewerPath] = useState<string | null>(null);
@@ -34,12 +39,8 @@ export default function App() {
   useEffect(() => {
     async function bootstrap() {
       try {
-        const [outlineResponse, progressResponse] = await Promise.all([
-          getOutline(COURSE_ID, LEARNER_ID),
-          getProgress(LEARNER_ID, COURSE_ID),
-        ]);
+        const outlineResponse = await getOutline(COURSE_ID, LEARNER_ID);
         setOutline(outlineResponse);
-        setProgress(progressResponse);
         const firstLessonId = outlineResponse.lessons[0]?.lesson_id ?? null;
         setSelectedLessonId(firstLessonId);
       } catch (caught) {
@@ -66,7 +67,7 @@ export default function App() {
   }, [selectedLessonId]);
 
   function selectScript(lessonId: string) {
-    setSelectedAdditionalDocument(null);
+    setSelectedUpload(null);
     setSelectedExternalCitation(null);
     setSelectedSlideId(null);
     setSelectedSlideViewerPath(null);
@@ -76,7 +77,7 @@ export default function App() {
   }
 
   function selectSlide(slide: CourseSlide) {
-    setSelectedAdditionalDocument(null);
+    setSelectedUpload(null);
     setSelectedExternalCitation(null);
     setSelectedLessonId(null);
     setSelectedLesson(null);
@@ -85,22 +86,22 @@ export default function App() {
     setSelectedSlideId(slide.slide_id);
   }
 
-  function selectAdditionalDocument(document: AdditionalDocument) {
+  function selectUpload(document: UploadResponse) {
     setSelectedLessonId(null);
     setSelectedLesson(null);
     setSelectedSlideId(null);
     setSelectedSlideViewerPath(null);
     setSelectedTranscriptSegmentId(null);
     setSelectedExternalCitation(null);
-    setSelectedAdditionalDocument(document);
+    setSelectedUpload(document);
   }
 
-  async function refreshOutline() {
-    try {
-      setOutline(await getOutline(COURSE_ID, LEARNER_ID));
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Không tải được tài liệu thêm");
-    }
+  function recordUpload(upload: UploadResponse) {
+    setUploadHistory((current) => {
+      const next = [upload, ...current.filter((item) => item.document_id !== upload.document_id)].slice(0, 20);
+      localStorage.setItem("vlearn-upload-history", JSON.stringify(next));
+      return next;
+    });
   }
 
   function openCitation(citation: Citation) {
@@ -142,7 +143,14 @@ export default function App() {
         title: selectedExternalCitation.label,
         lesson_id: selectedExternalCitation.lesson_id,
       }
-    : selectedLesson
+      : selectedUpload
+        ? {
+            source_type: "user_upload",
+            source_id: selectedUpload.source_id,
+            title: selectedUpload.file_name,
+            lesson_id: "user-upload",
+          }
+      : selectedLesson
       ? {
           source_type: "transcript",
           source_id: selectedLesson.transcript_file,
@@ -158,8 +166,8 @@ export default function App() {
         : undefined;
   const viewerContent: ViewerContent | null = selectedExternalCitation
     ? { type: "document", title: selectedExternalCitation.label, viewerPath: selectedExternalCitation.viewer_path }
-    : selectedAdditionalDocument
-      ? { type: "document", title: selectedAdditionalDocument.title, viewerPath: selectedAdditionalDocument.viewer_path }
+    : selectedUpload
+      ? { type: "document", title: selectedUpload.file_name, viewerPath: selectedUpload.viewer_path }
     : selectedLesson
     ? { type: "script", lesson: selectedLesson, segmentId: selectedTranscriptSegmentId }
     : selectedSlide
@@ -172,15 +180,13 @@ export default function App() {
         <LessonCatalog
           lessons={outline?.lessons ?? []}
           slides={outline?.slides ?? []}
-          additionalDocuments={outline?.additional_documents ?? []}
-          progress={progress}
+          uploadHistory={uploadHistory}
           selectedLessonId={selectedLessonId}
           selectedSlideId={selectedSlideId}
-          selectedAdditionalDocumentId={selectedAdditionalDocument?.document_id ?? null}
+          selectedUploadId={selectedUpload?.document_id ?? null}
           onSelectLesson={selectScript}
           onSelectSlide={selectSlide}
-          onSelectAdditionalDocument={selectAdditionalDocument}
-          onAdditionalDocumentsChanged={() => void refreshOutline()}
+          onSelectUpload={selectUpload}
         />
       </aside>
 
@@ -208,6 +214,7 @@ export default function App() {
             currentLessonId={selectedLessonId}
             onOpenCitation={openCitation}
             currentDocument={currentDocument}
+            onUploadCompleted={recordUpload}
           />
         </aside>
       ) : null}

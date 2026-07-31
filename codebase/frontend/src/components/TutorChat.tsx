@@ -23,6 +23,7 @@ type TutorChatProps = {
   currentLessonId: string | null;
   onOpenCitation: (citation: Citation) => void;
   currentDocument?: CurrentDocument;
+  onUploadCompleted: (upload: UploadResponse) => void;
 };
 
 type ChatTurn = {
@@ -36,7 +37,7 @@ type ChatTurn = {
   failed?: boolean;
 };
 
-export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation, currentDocument }: TutorChatProps) {
+export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation, currentDocument, onUploadCompleted }: TutorChatProps) {
   const [message, setMessage] = useState("");
   const [chatTurns, setChatTurns] = useState<ChatTurn[]>([
     {
@@ -189,6 +190,7 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
     try {
       const response = await uploadDocument(learnerId, conversationId, file);
       setUploads((current) => [...current, response]);
+      onUploadCompleted(response);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Không upload được file");
     }

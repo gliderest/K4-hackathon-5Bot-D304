@@ -1,91 +1,38 @@
-import { useState } from "react";
-
-import {
-  cancelAdditionalDocument,
-  confirmAdditionalDocument,
-  stageAdditionalDocument,
-} from "../services/api";
 import type {
-  AdditionalDocument,
   CourseLesson,
   CourseSlide,
-  ProgressSnapshot,
-  StagedAdditionalDocument,
+  UploadResponse,
 } from "../types/api";
 
 type LessonCatalogProps = {
   lessons: CourseLesson[];
   slides: CourseSlide[];
-  additionalDocuments: AdditionalDocument[];
-  progress: ProgressSnapshot | null;
+  uploadHistory: UploadResponse[];
   selectedLessonId: string | null;
   selectedSlideId: string | null;
-  selectedAdditionalDocumentId: string | null;
+  selectedUploadId: string | null;
   onSelectLesson: (lessonId: string) => void;
   onSelectSlide: (slide: CourseSlide) => void;
-  onSelectAdditionalDocument: (document: AdditionalDocument) => void;
-  onAdditionalDocumentsChanged: () => void;
+  onSelectUpload: (document: UploadResponse) => void;
 };
 
 export function LessonCatalog({
   lessons,
   slides,
-  additionalDocuments,
-  progress,
+  uploadHistory,
   selectedLessonId,
   selectedSlideId,
-  selectedAdditionalDocumentId,
+  selectedUploadId,
   onSelectLesson,
   onSelectSlide,
-  onSelectAdditionalDocument,
-  onAdditionalDocumentsChanged,
+  onSelectUpload,
 }: LessonCatalogProps) {
-  const weakTopics = progress?.weak_topics ?? [];
-  const [stagedDocument, setStagedDocument] = useState<StagedAdditionalDocument | null>(null);
-  const [isSavingDocument, setIsSavingDocument] = useState(false);
-  const [documentError, setDocumentError] = useState<string | null>(null);
-
-  async function handleStageDocument(file: File | null) {
-    if (!file) return;
-    setDocumentError(null);
-    try {
-      if (stagedDocument) await cancelAdditionalDocument(stagedDocument.stage_id);
-      setStagedDocument(await stageAdditionalDocument(file));
-    } catch (caught) {
-      setDocumentError(caught instanceof Error ? caught.message : "Không tải được tài liệu");
-    }
-  }
-
-  async function saveStagedDocument() {
-    if (!stagedDocument) return;
-    setIsSavingDocument(true);
-    setDocumentError(null);
-    try {
-      await confirmAdditionalDocument(stagedDocument.stage_id);
-      setStagedDocument(null);
-      onAdditionalDocumentsChanged();
-    } catch (caught) {
-      setDocumentError(caught instanceof Error ? caught.message : "Không lưu được tài liệu");
-    } finally {
-      setIsSavingDocument(false);
-    }
-  }
-
-  async function cancelStagedDocument() {
-    if (!stagedDocument) return;
-    try {
-      await cancelAdditionalDocument(stagedDocument.stage_id);
-    } finally {
-      setStagedDocument(null);
-    }
-  }
-
   return (
     <>
       <header className="catalog-header">
         <p className="eyebrow">Learning Map</p>
         <h1>VLearn Course Outline</h1>
-        <p>Chọn Script, Slide hoặc tài liệu thêm để xem nội dung và hỏi AI Tutor.</p>
+        <p>Chọn Script hoặc Slide để xem nội dung. Tài liệu cá nhân được thêm trực tiếp trong khung chat.</p>
       </header>
 
       <section className="catalog-content" aria-label="Danh mục tài liệu khóa học">
@@ -122,25 +69,14 @@ export function LessonCatalog({
         <div className="catalog-group additional-documents-group">
           <div className="catalog-source-frame">
             <div className="additional-document-heading">
-              <h2 className="catalog-group-title">Tài liệu thêm</h2>
-              <label className="add-document-button">Thêm tài liệu<input type="file" accept=".pdf,.docx,.txt,.md" onChange={(event) => void handleStageDocument(event.target.files?.[0] ?? null)} /></label>
+              <h2 className="catalog-group-title">Lịch sử upload</h2>
             </div>
-            {stagedDocument ? <div className="staged-document-chip"><span>📎 {stagedDocument.file_name}</span><span className="staged-document-actions"><button type="button" onClick={() => void saveStagedDocument()} disabled={isSavingDocument}>{isSavingDocument ? "Đang lưu" : "Lưu"}</button><button type="button" onClick={() => void cancelStagedDocument()} disabled={isSavingDocument}>Hủy</button></span></div> : null}
-            {documentError ? <p className="document-error">{documentError}</p> : null}
             <div className="lesson-list additional-document-list">
-              {additionalDocuments.length ? additionalDocuments.map((document) => (
-                <button key={document.document_id} className={`lesson-card ${document.document_id === selectedAdditionalDocumentId ? "is-selected" : ""}`} onClick={() => onSelectAdditionalDocument(document)} type="button"><span className="lesson-title">{document.title}</span><span className="lesson-meta">{document.file_name}</span></button>
-              )) : <p className="history-empty">Chưa có tài liệu dùng chung.</p>}
+              {uploadHistory.length ? uploadHistory.map((document) => (
+                <button key={document.document_id} className={`lesson-card ${document.document_id === selectedUploadId ? "is-selected" : ""}`} onClick={() => onSelectUpload(document)} type="button"><span className="lesson-title">{document.file_name}</span><span className="lesson-meta">{document.chunk_count} đoạn · Mở từ chat</span></button>
+              )) : <p className="history-empty">Chưa có file upload. Hãy thêm file trong khung chat.</p>}
             </div>
           </div>
-        </div>
-      </section>
-
-      <section className="memory-panel">
-        <h2>Memory</h2>
-        <p>Weak topics</p>
-        <div className="tag-wrap">
-          {weakTopics.length ? weakTopics.map((topic) => <span key={topic} className="tag">{topic}</span>) : <span className="tag muted">Chưa có</span>}
         </div>
       </section>
     </>
