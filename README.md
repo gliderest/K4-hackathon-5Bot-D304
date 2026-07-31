@@ -4,7 +4,7 @@
 
 | Mã sinh viên | Họ và tên | Trách nhiệm chính | Phân công chi tiết |
 | :--- | :--- | :--- | :--- |
-| **2A202601850** | Nguyễn Tiến Đạt | **Spec & Evidence** | Xây dựng tài liệu `spec.md`, khai phá dữ liệu mining ($134$ hội thoại), thu thập bằng chứng lỗi |
+| **2A202601850** | Nguyễn Tiến Đạt | **Spec & Evidence** | Xây dựng tài liệu `spec.md`, khai phá dữ liệu mining ($134$ hội thoại), thu thập bằng chứng lỗi, code frontend |
 | **2A202601614** | Tống Tiến Mạnh | **Prompt Engineering** | Thiết kế Prompt RAG, tối ưu hóa output JSON (`reasoning_steps`) & logic tính `Confidence Score` |
 | **2A202601126** | Bùi Thái Sơn | **Code/Prototype** | Phát triển luồng RAG, tích hợp HITL Gate (ngưỡng $0.85$) & xây dựng giao diện TA Dashboard |
 | **2A202601526** | Nguyễn Công Đạt | **Demo Preparation** | Lập kịch bản demo (3–5 phút), chuẩn bị dữ liệu mẫu và slide thuyết trình CP5/CP6 |
