@@ -7,6 +7,7 @@ from backend.app.rag.retriever import LocalRetriever
 from backend.app.services.chat_service import ChatService
 from backend.app.services.course_service import CourseService
 from backend.app.services.upload_service import UploadService
+from backend.app.tools.search_document import SearchDocumentTool
 
 
 class AppRuntime:
@@ -24,7 +25,7 @@ class AppRuntime:
             embedding_service=self.embedding_service,
         )
         self.agent = TutorAgent(
-            retriever=self.retriever,
+            search_document=SearchDocumentTool(retriever=self.retriever),
             progress_store=self.progress_store,
         )
         self.chat_service = ChatService(agent=self.agent)

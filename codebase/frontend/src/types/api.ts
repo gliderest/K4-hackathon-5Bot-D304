@@ -35,10 +35,18 @@ export type CourseLesson = {
   completion_percent: number;
 };
 
+export type CourseSlide = {
+  slide_id: string;
+  title: string;
+  slide_file: string;
+  slide_viewer_path: string;
+};
+
 export type CourseOutlineResponse = {
   course_id: string;
   learner_id: string;
   lessons: CourseLesson[];
+  slides: CourseSlide[];
 };
 
 export type LessonDetailResponse = {
