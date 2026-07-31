@@ -2,6 +2,8 @@ import type {
   ChatRequest,
   ChatResponse,
   CourseOutlineResponse,
+  ConversationDetail,
+  ConversationSummary,
   LessonDetailResponse,
   ProgressSnapshot,
   UploadResponse,
@@ -24,6 +26,27 @@ export async function sendChat(request: ChatRequest): Promise<ChatResponse> {
     body: JSON.stringify(request),
   });
   return parseJson<ChatResponse>(response);
+}
+
+export async function getConversations(
+  learnerId: string,
+  courseId: string,
+): Promise<ConversationSummary[]> {
+  const response = await fetch(
+    `${API_ROOT}/chat/history?learner_id=${encodeURIComponent(learnerId)}&course_id=${encodeURIComponent(courseId)}`,
+  );
+  return parseJson<ConversationSummary[]>(response);
+}
+
+export async function getConversation(
+  conversationId: string,
+  learnerId: string,
+  courseId: string,
+): Promise<ConversationDetail> {
+  const response = await fetch(
+    `${API_ROOT}/chat/history/${encodeURIComponent(conversationId)}?learner_id=${encodeURIComponent(learnerId)}&course_id=${encodeURIComponent(courseId)}`,
+  );
+  return parseJson<ConversationDetail>(response);
 }
 
 export async function getOutline(

@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 
-import { sendChat, uploadDocument } from "../services/api";
-import type { ChatResponse, Citation, CurrentDocument, UploadResponse } from "../types/api";
+import { getConversation, getConversations, sendChat, uploadDocument } from "../services/api";
+import type { ChatResponse, Citation, ConversationSummary, CurrentDocument, UploadResponse } from "../types/api";
 import { CitationLink } from "./CitationLink";
 
 type TutorChatProps = {
@@ -29,11 +29,49 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
   ]);
   const [isSending, setIsSending] = useState(false);
   const [uploads, setUploads] = useState<UploadResponse[]>([]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setError(null);
   }, [currentLessonId]);
+
+  async function refreshHistory() {
+    try {
+      setConversations(await getConversations(learnerId, courseId));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Không tải được lịch sử chat");
+    }
+  }
+
+  useEffect(() => {
+    void refreshHistory();
+  }, [learnerId, courseId]);
+
+  function startNewConversation() {
+    setConversationId(null);
+    setChatTurns([{ role: "assistant", content: "Hỏi mình về lesson, khái niệm, bài giảng, hoặc upload tài liệu riêng để đối chiếu." }]);
+    setIsHistoryOpen(false);
+  }
+
+  async function openConversation(id: string) {
+    try {
+      const conversation = await getConversation(id, learnerId, courseId);
+      setConversationId(conversation.conversation_id);
+      setChatTurns(conversation.messages.map((item) => ({
+        role: item.role,
+        content: item.content,
+        response: item.role === "assistant"
+          ? { conversation_id: conversation.conversation_id, answer: item.content, citations: item.citations, confidence: "medium", needs_clarification: false, suggested_next_action: null }
+          : undefined,
+      })));
+      setIsHistoryOpen(false);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Không mở được lịch sử chat");
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,11 +91,14 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
         current_lesson_id: currentLessonId ?? undefined,
         current_document: currentDocument,
         uploaded_document_ids: uploads.map((upload) => upload.document_id),
+        conversation_id: conversationId ?? undefined,
       });
+      setConversationId(response.conversation_id);
       setChatTurns((current) => [
         ...current,
         { role: "assistant", content: response.answer, response },
       ]);
+      void refreshHistory();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Không gửi được câu hỏi");
     } finally {
@@ -80,8 +121,13 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
     <>
       <header className="chat-header">
         <p className="eyebrow">AI Tutor</p>
-        <h2>Cross-Lesson Chat</h2>
+        <div className="chat-title-row"><h2>Cross-Lesson Chat</h2><button className="history-toggle" type="button" onClick={() => setIsHistoryOpen((value) => !value)}>Lịch sử</button></div>
       </header>
+
+      {isHistoryOpen ? <section className="history-panel">
+        <button className="new-chat-button" type="button" onClick={startNewConversation}>+ Cuộc trò chuyện mới</button>
+        {conversations.length ? conversations.map((conversation) => <button key={conversation.conversation_id} className={`history-item ${conversation.conversation_id === conversationId ? "is-active" : ""}`} type="button" onClick={() => void openConversation(conversation.conversation_id)}>{conversation.title}</button>) : <p className="history-empty">Chưa có cuộc hội thoại nào.</p>}
+      </section> : null}
 
       <section className="chat-messages">
         {chatTurns.map((turn, index) => (

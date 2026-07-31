@@ -28,9 +28,11 @@ class ChatRequest(BaseModel):
     current_lesson_id: str | None = None
     current_document: CurrentDocument | None = None
     uploaded_document_ids: list[str] = Field(default_factory=list)
+    conversation_id: str | None = None
 
 
 class ChatResponse(BaseModel):
+    conversation_id: str = ""
     answer: str
     citations: list[Citation] = Field(default_factory=list)
     confidence: Literal["high", "medium", "low"]

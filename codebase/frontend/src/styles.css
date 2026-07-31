@@ -77,6 +77,74 @@ input {
   display: none;
 }
 
+.chat-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.history-toggle,
+.new-chat-button,
+.history-item {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.history-toggle {
+  padding: 6px 9px;
+  border-radius: 10px;
+  background: #eef4f9;
+  color: #294255;
+  font-size: 13px;
+}
+
+.history-panel {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 190px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid rgba(19, 34, 56, 0.1);
+  border-radius: 14px;
+  background: #fbfcfe;
+}
+
+.new-chat-button,
+.history-item {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  text-align: left;
+}
+
+.new-chat-button {
+  background: #132238;
+  color: #fff;
+}
+
+.history-item {
+  overflow: hidden;
+  background: transparent;
+  color: #294255;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-item:hover,
+.history-item.is-active {
+  background: #eef4f9;
+}
+
+.history-empty {
+  margin: 4px 0;
+  color: #5f6d7a;
+  font-size: 13px;
+}
+
 .chat-pane {
   display: flex;
   flex-direction: column;

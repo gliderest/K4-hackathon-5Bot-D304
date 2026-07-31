@@ -16,6 +16,7 @@ export type ChatRequest = {
   current_lesson_id?: string;
   current_document?: CurrentDocument;
   uploaded_document_ids?: string[];
+  conversation_id?: string;
 };
 
 export type CurrentDocument = {
@@ -26,11 +27,32 @@ export type CurrentDocument = {
 };
 
 export type ChatResponse = {
+  conversation_id: string;
   answer: string;
   citations: Citation[];
   confidence: "high" | "medium" | "low";
   needs_clarification: boolean;
   suggested_next_action: string | null;
+};
+
+export type ConversationSummary = {
+  conversation_id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ConversationMessage = {
+  role: "user" | "assistant";
+  content: string;
+  citations: Citation[];
+  created_at: string;
+};
+
+export type ConversationDetail = {
+  conversation_id: string;
+  title: string;
+  messages: ConversationMessage[];
 };
 
 export type CourseLesson = {

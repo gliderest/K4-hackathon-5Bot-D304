@@ -1,6 +1,7 @@
 from backend.app.agent.tutor_agent import TutorAgent
 from backend.app.core.config import settings
 from backend.app.memory.progress_store import SqliteProgressStore
+from backend.app.memory.chat_history_store import SqliteChatHistoryStore
 from backend.app.rag.embeddings import OpenAIEmbeddingService
 from backend.app.rag.ingestion import CourseCorpus
 from backend.app.rag.retriever import LocalRetriever
@@ -17,6 +18,7 @@ class AppRuntime:
         self.embedding_service = OpenAIEmbeddingService(settings)
         self.corpus = CourseCorpus(settings, embedding_service=self.embedding_service)
         self.progress_store = SqliteProgressStore(settings.database_path)
+        self.chat_history_store = SqliteChatHistoryStore(settings.database_path)
         self.retriever = LocalRetriever(
             settings,
             self.corpus,
@@ -32,7 +34,7 @@ class AppRuntime:
             current_document_writer=CurrentDocumentWriter(settings),
             progress_store=self.progress_store,
         )
-        self.chat_service = ChatService(agent=self.agent)
+        self.chat_service = ChatService(agent=self.agent, history_store=self.chat_history_store)
         self.course_service = CourseService(
             settings=settings,
             corpus=self.corpus,
@@ -45,6 +47,7 @@ class AppRuntime:
         settings.resolve_path(settings.vector_store_dir).mkdir(parents=True, exist_ok=True)
         await self.corpus.build()
         await self.progress_store.initialize()
+        await self.chat_history_store.initialize()
 
 
 runtime = AppRuntime()

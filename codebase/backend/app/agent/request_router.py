@@ -28,6 +28,18 @@ SEARCH_SIGNALS = (
     "so sánh các",
 )
 SUMMARY_SIGNALS = ("tóm tắt", "tổng hợp", "ý chính", "dàn ý")
+CONTENT_CREATION_SIGNALS = (
+    "trắc nghiệm",
+    "quiz",
+    "flashcard",
+    "câu hỏi ôn tập",
+    "tạo câu hỏi",
+    "ra câu hỏi",
+    "soạn câu hỏi",
+    "tạo bài tập",
+    "ra bài tập",
+    "tạo đề",
+)
 CURRENT_DOCUMENT_SIGNALS = (
     "tài liệu này",
     "bài này",
@@ -44,12 +56,17 @@ def choose_tool_route(message: str, current_document: CurrentDocument | None) ->
     normalized = message.casefold().strip()
     if len(normalized) < 8:
         return ToolRoute.CLARIFY
-    if any(signal in normalized for signal in SEARCH_SIGNALS):
-        return ToolRoute.SEARCH_DOCUMENT
-    if current_document and any(signal in normalized for signal in SUMMARY_SIGNALS):
+    # Creation tasks use the open document as their only source. Check these
+    # signals before search terms: "tạo quiz từ bài giảng" is not a request to
+    # locate another lesson merely because it contains the word "bài".
+    if any(signal in normalized for signal in CONTENT_CREATION_SIGNALS):
+        return ToolRoute.ANALYSE_CURRENT_DOCUMENT
+    if any(signal in normalized for signal in SUMMARY_SIGNALS):
         return ToolRoute.ANALYSE_CURRENT_DOCUMENT
     if current_document and any(signal in normalized for signal in CURRENT_DOCUMENT_SIGNALS):
         return ToolRoute.ANALYSE_CURRENT_DOCUMENT
     if current_document and any(signal in normalized for signal in ANALYSIS_SIGNALS):
         return ToolRoute.ANALYSE_CURRENT_DOCUMENT
+    if any(signal in normalized for signal in SEARCH_SIGNALS):
+        return ToolRoute.SEARCH_DOCUMENT
     return ToolRoute.SEARCH_DOCUMENT
