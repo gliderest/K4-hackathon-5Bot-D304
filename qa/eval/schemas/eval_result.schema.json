@@ -1,1 +1,0 @@
-{"type":"object","required":["run_id","timestamp","official","execution_mode","results","metrics"]}

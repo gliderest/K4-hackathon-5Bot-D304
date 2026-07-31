@@ -1,0 +1,123 @@
+# educational_agent — tool declarations for AI Learning Agent
+# Following the same pattern as lab04 starter_v0
+
+tools:
+  # ---------------- Core Educational Tools ----------------
+  - name: course_knowledge
+    description: "Search and retrieve information from course materials including slides, transcripts, and chat history"
+    parameters:
+      type: object
+      properties:
+        query: {type: string, description: "Search query for course content"}
+        source_priority: {type: string, enum: ["current_lesson", "current_transcript", "other_lessons", "other_transcripts", "chat_history", "conversation_memory", "uploaded_docs"], default: "current_lesson", description: "Priority order for searching knowledge sources"}
+        max_results: {type: integer, default: 5, description: "Maximum number of results to return"}
+      required: [query]
+
+  - name: conversation_memory
+    description: "Retrieve and summarize previous conversations with the student"
+    parameters:
+      type: object
+      properties:
+        operation: {type: string, enum: ["search", "get_recent", "get_by_topic", "get_summary"], default: "search", description: "Operation to perform on conversation memory"}
+        query: {type: string, description: "Search query (for search operation)"}
+        limit: {type: integer, default: 10, description: "Maximum number of conversations to return"}
+        topic: {type: string, description: "Topic to filter by (for get_by_topic operation)"}
+      required: [operation]
+
+  - name: learning_state
+    description: "Manage and query the student's learning state and progress"
+    parameters:
+      type: object
+      properties:
+        operation: {type: string, enum: ["get", "update", "assess", "get_recommendations"], default: "get", description: "Operation to perform on learning state"}
+        student_id: {type: string, description: "Unique identifier for the student"}
+        topic: {type: string, description: "Specific topic to operate on (for assessment/update)"}
+        evidence: {type: object, description: "Evidence to update learning state with (for update operation)"}
+      required: [operation, student_id]
+
+  # ---------------- Application Tools ----------------
+  - name: rewrite
+    description: "Rewrite content in different styles (simplify, summarize, expand, bullet points, etc.)"
+    parameters:
+      type: object
+      properties:
+        content: {type: string, description: "Content to rewrite"}
+        style: {type: string, enum: ["simplify", "summarize", "expand", "bullet_points", "study_notes", "flashcards", "explain_like_im_5"], description: "Rewriting style to apply"}
+        target_audience: {type: string, description: "Target audience for the rewritten content (e.g., 'beginner', 'intermediate', 'advanced')"}
+      required: [content, style]
+
+  - name: quiz
+    description: "Generate quiz questions based on learning state and topic"
+    parameters:
+      type: object
+      properties:
+        topic: {type: string, description: "Topic to generate questions about"}
+        question_type: {type: string, enum: ["multiple_choice", "true_false", "short_answer", "mixed"], default: "mixed", description: "Type of questions to generate"}
+        difficulty: {type: string, enum: ["easy", "medium", "hard", "adaptive"], default: "adaptive", description: "Difficulty level of questions"}
+        count: {type: integer, default: 5, description: "Number of questions to generate"}
+        learning_state: {type: object, description: "Current learning state to adapt question difficulty"}
+      required: [topic]
+
+  - name: recommendation
+    description: "Generate learning recommendations based on student progress"
+    parameters:
+      type: object
+      properties:
+        student_id: {type: string, description: "Unique identifier for the student"}
+        recommendation_type: {type: string, enum: ["prerequisite", "next_topic", "related_concept", "review_plan", "alternative_explanation"], default: "next_topic", description: "Type of recommendation to generate"}
+        current_topic: {type: string, description: "Current topic the student is studying"}
+      required: [student_id, recommendation_type]
+
+  - name: citation
+    description: "Format and manage citations from course materials"
+    parameters:
+      type: object
+      properties:
+        action: {type: string, enum: ["extract", "format", "validate"], default: "extract", description: "Action to perform on citations"}
+        content: {type: string, description: "Text content to extract citations from"}
+        citation_format: {type: string, enum: ["inline", "bibliography", "apa", "mla"], default: "inline", description: "Format for citations"}
+      required: [action]
+
+  - name: external_learning
+    description: "Process and integrate externally uploaded learning materials"
+    parameters:
+      type: object
+      properties:
+        operation: {type: string, enum: ["process", "query", "cleanup"], default: "process", description: "Operation to perform on external materials"}
+        file_path: {type: string, description: "Path to the uploaded file"}
+        query: {type: string, description: "Query to search within processed materials (for query operation)"}
+        file_type: {type: string, description: "Type of file (pdf, docx, pptx, txt, md)"}
+      required: [operation]
+
+  - name: speech
+    description: "Handle speech-to-text and text-to-speech conversions"
+    parameters:
+      type: object
+      properties:
+        operation: {type: string, enum: ["speech_to_text", "text_to_speech"], default: "speech_to_text", description: "Speech operation to perform"}
+        audio_data: {type: string, description: "Base64 encoded audio data (for speech_to_text)"}
+        text: {type: string, description: "Text to convert to speech (for text_to_speech)"}
+        language: {type: string, enum: ["vi", "en"], default: "vi", description: "Language for speech processing"}
+      required: [operation]
+
+  # ---------------- Legacy tools from lab04 (to be maintained for compatibility) ----------------
+  - name: clarify
+    description: "Gửi một câu hỏi cho người dùng."
+    parameters:
+      type: object
+      properties:
+        question: {type: string, default: "", description: "Câu hỏi"}
+        response_type: {type: string, enum: [text, yes_no, choice], default: "text", description: "Kiểu trả lời"}
+        options: {type: array, default: [], items: {type: string}, description: "Các lựa chọn"}
+      required: [question]
+
+  - name: lookup
+    description: "Tra cứu thông tin trên internet."
+    parameters:
+      type: object
+      properties:
+        query: {type: string, default: "", description: "Truy vấn"}
+        topic: {type: string, enum: [general, news], default: "general", description: "Phân loại"}
+        timeframe: {type: string, enum: [day, week, month, year], default: "week", description: "Khoảng thời gian"}
+        max_results: {type: integer, default: 5, description: "Số kết quả"}
+      required: [query]

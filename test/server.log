@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "D:\vinAI\lab05-06\test\server.py", line 46, in <module>
+    from tools.course_knowledge import course_knowledge_tool
+  File "D:\vinAI\lab05-06\test\tools\course_knowledge\__init__.py", line 3, in <module>
+    from .tool import CourseKnowledgeTool
+  File "D:\vinAI\lab05-06\test\tools\course_knowledge\tool.py", line 10, in <module>
+    from .base import Tool
+ModuleNotFoundError: No module named 'tools.course_knowledge.base'

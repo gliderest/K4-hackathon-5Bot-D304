@@ -1,1 +1,0 @@
-{"type":"object","required":["case_id","category","risk_class","source","source_reference","input","context","expected_behavior","expected_citation","must_ask_clarification","must_refuse","severity","notes"]}
