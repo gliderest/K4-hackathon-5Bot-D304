@@ -1,4 +1,5 @@
 .env
+.venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -16,4 +17,3 @@ data/user_uploads/
 
 # Long-term memory local.
 storage/
-
