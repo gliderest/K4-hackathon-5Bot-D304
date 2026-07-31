@@ -4,8 +4,18 @@ from backend.app.rag.ingestion import CourseCorpus
 from backend.app.schemas.course import (
     CourseLesson,
     CourseOutlineResponse,
+    CourseSlide,
     LessonDetailResponse,
 )
+
+
+def transcript_body(markdown: str) -> str:
+    """Remove the source/convention/processing notes before the lesson body."""
+    lines = markdown.splitlines()
+    for index, line in enumerate(lines):
+        if line.startswith("## "):
+            return "\n".join(lines[index:]).strip()
+    return markdown.strip()
 
 
 class CourseService:
@@ -40,10 +50,20 @@ class CourseService:
             )
             for lesson in self.corpus.lessons.values()
         ]
+        slides = [
+            CourseSlide(
+                slide_id=slide["slide_id"],
+                title=slide["title"],
+                slide_file=slide["slide_file"],
+                slide_viewer_path=f"/api/assets/slides/{slide['slide_file']}",
+            )
+            for slide in self.corpus.slide_documents
+        ]
         return CourseOutlineResponse(
             course_id=course_id,
             learner_id=learner_id,
             lessons=lessons,
+            slides=slides,
         )
 
     async def get_lesson(self, course_id: str, lesson_id: str) -> LessonDetailResponse:
@@ -52,7 +72,7 @@ class CourseService:
             course_id=course_id,
             lesson_id=lesson.lesson_id,
             title=lesson.title,
-            transcript_markdown=lesson.transcript_markdown,
+            transcript_markdown=transcript_body(lesson.transcript_markdown),
             transcript_viewer_path=f"/api/assets/transcripts/{lesson.transcript_file}",
             slide_file=lesson.source_slide_file,
             slide_viewer_path=(

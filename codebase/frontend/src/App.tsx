@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 
 import { LessonCatalog } from "./components/LessonCatalog";
 import { LessonViewer } from "./components/LessonViewer";
+import type { ViewerContent } from "./components/LessonViewer";
 import { TutorChat } from "./components/TutorChat";
 import { getLesson, getOutline, getProgress } from "./services/api";
 import type {
   CourseOutlineResponse,
+  CourseSlide,
+  Citation,
   LessonDetailResponse,
   ProgressSnapshot,
 } from "./types/api";
@@ -17,7 +20,11 @@ export default function App() {
   const [outline, setOutline] = useState<CourseOutlineResponse | null>(null);
   const [progress, setProgress] = useState<ProgressSnapshot | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
+  const [selectedSlideId, setSelectedSlideId] = useState<string | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<LessonDetailResponse | null>(null);
+  const [selectedTranscriptSegmentId, setSelectedTranscriptSegmentId] = useState<string | null>(null);
+  const [selectedSlideViewerPath, setSelectedSlideViewerPath] = useState<string | null>(null);
+  const [selectedExternalCitation, setSelectedExternalCitation] = useState<Citation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(true);
 
@@ -55,20 +62,81 @@ export default function App() {
     void loadLesson();
   }, [selectedLessonId]);
 
+  function selectScript(lessonId: string) {
+    setSelectedExternalCitation(null);
+    setSelectedSlideId(null);
+    setSelectedSlideViewerPath(null);
+    setSelectedTranscriptSegmentId(null);
+    setSelectedLesson(null);
+    setSelectedLessonId(lessonId);
+  }
+
+  function selectSlide(slide: CourseSlide) {
+    setSelectedExternalCitation(null);
+    setSelectedLessonId(null);
+    setSelectedLesson(null);
+    setSelectedTranscriptSegmentId(null);
+    setSelectedSlideViewerPath(null);
+    setSelectedSlideId(slide.slide_id);
+  }
+
+  function openCitation(citation: Citation) {
+    if (citation.source_type === "slide") {
+      const slide = outline?.slides.find((item) => item.slide_file === citation.source_id);
+      if (!slide) return;
+      setSelectedLessonId(null);
+      setSelectedExternalCitation(null);
+      setSelectedLesson(null);
+      setSelectedTranscriptSegmentId(null);
+      setSelectedSlideId(slide.slide_id);
+      setSelectedSlideViewerPath(citation.viewer_path);
+      return;
+    }
+
+    if (citation.source_type === "transcript" && citation.lesson_id) {
+      setSelectedSlideId(null);
+      setSelectedExternalCitation(null);
+      setSelectedSlideViewerPath(null);
+      setSelectedLesson(null);
+      setSelectedTranscriptSegmentId(citation.segment_id);
+      setSelectedLessonId(citation.lesson_id);
+      return;
+    }
+
+    setSelectedLessonId(null);
+    setSelectedLesson(null);
+    setSelectedSlideId(null);
+    setSelectedSlideViewerPath(null);
+    setSelectedTranscriptSegmentId(null);
+    setSelectedExternalCitation(citation);
+  }
+
+  const selectedSlide = outline?.slides.find((slide) => slide.slide_id === selectedSlideId);
+  const viewerContent: ViewerContent | null = selectedExternalCitation
+    ? { type: "document", title: selectedExternalCitation.label, viewerPath: selectedExternalCitation.viewer_path }
+    : selectedLesson
+    ? { type: "script", lesson: selectedLesson, segmentId: selectedTranscriptSegmentId }
+    : selectedSlide
+      ? { type: "slide", slideId: selectedSlide.slide_id, title: selectedSlide.title, viewerPath: selectedSlideViewerPath ?? selectedSlide.slide_viewer_path }
+      : null;
+
   return (
     <main className={`three-pane-layout ${isChatOpen ? "" : "chat-is-hidden"}`}>
       <aside className="pane catalog-pane">
         <LessonCatalog
           lessons={outline?.lessons ?? []}
+          slides={outline?.slides ?? []}
           progress={progress}
           selectedLessonId={selectedLessonId}
-          onSelectLesson={setSelectedLessonId}
+          selectedSlideId={selectedSlideId}
+          onSelectLesson={selectScript}
+          onSelectSlide={selectSlide}
         />
       </aside>
 
       <section className="pane viewer-pane">
         {error ? <p className="error-text">{error}</p> : null}
-        <LessonViewer lesson={selectedLesson} />
+        <LessonViewer content={viewerContent} />
       </section>
 
       <button
@@ -88,6 +156,7 @@ export default function App() {
             learnerId={LEARNER_ID}
             courseId={COURSE_ID}
             currentLessonId={selectedLessonId}
+            onOpenCitation={openCitation}
           />
         </aside>
       ) : null}

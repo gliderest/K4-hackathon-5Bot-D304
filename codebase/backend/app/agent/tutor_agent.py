@@ -2,14 +2,14 @@ from dataclasses import dataclass
 
 from backend.app.memory.progress_store import SqliteProgressStore
 from backend.app.rag.citation import build_citation
-from backend.app.rag.retriever import LocalRetriever
 from backend.app.schemas.chat import ChatRequest, ChatResponse
 from backend.app.schemas.progress import LessonProgress, ProgressPatch
+from backend.app.tools.search_document import SearchDocumentTool
 
 
 @dataclass(slots=True)
 class TutorAgent:
-    retriever: LocalRetriever
+    search_document: SearchDocumentTool
     progress_store: SqliteProgressStore
 
     async def run(self, request: ChatRequest) -> ChatResponse:
@@ -18,28 +18,22 @@ class TutorAgent:
                 answer="Bạn hãy mô tả rõ hơn câu hỏi để mình tìm đúng lesson, transcript hoặc slide liên quan.",
                 confidence="low",
                 needs_clarification=True,
-                suggested_next_action="Nếu có thể, hãy nhắc đến chủ đề, Day/Lesson, hoặc ví dụ bạn đang cần ôn lại.",
+                suggested_next_action=None,
             )
 
-        course_hits = await self.retriever.search_course(
-            query=request.message,
+        # current_lesson_id only records progress. Retrieval always searches the
+        # complete course corpus, so a concept can be found in any Day/Lesson.
+        search_result = await self.search_document.search(
+            keyword=request.message,
             course_id=request.course_id,
-            top_k=6,
-        )
-        upload_hits = await self.retriever.search_uploads(
-            query=request.message,
             learner_id=request.learner_id,
             document_ids=request.uploaded_document_ids,
-            top_k=3,
+            top_k=12,
         )
-        combined_hits = sorted(
-            [*course_hits, *upload_hits],
-            key=lambda hit: hit.score,
-            reverse=True,
-        )[:6]
-        memory_context = await self.progress_store.build_context(
-            learner_id=request.learner_id,
-            course_id=request.course_id,
+        combined_hits = self._select_diverse_sources(
+            search_result.course_hits,
+            search_result.upload_hits,
+            limit=6,
         )
 
         if not combined_hits:
@@ -50,13 +44,12 @@ class TutorAgent:
                 ),
                 confidence="low",
                 needs_clarification=True,
-                suggested_next_action="Thử đặt câu hỏi cụ thể hơn theo dạng: 'Trong lesson nào nói về ...?'",
+                suggested_next_action=None,
             )
 
         citations = [build_citation(hit) for hit in combined_hits[:4]]
-        answer = self._compose_answer(message=request.message, memory_context=memory_context, hits=combined_hits)
+        answer = self._compose_answer(combined_hits)
         confidence = "high" if combined_hits[0].score >= 0.72 else "medium"
-        next_action = f"Mở {citations[0].label} để xem đúng nguồn và tiếp tục ôn tập." if citations else None
 
         if request.current_lesson_id:
             await self.progress_store.update(
@@ -77,29 +70,42 @@ class TutorAgent:
             citations=citations,
             confidence=confidence,
             needs_clarification=False,
-            suggested_next_action=next_action,
+            suggested_next_action=None,
         )
 
-    def _compose_answer(self, message: str, memory_context: str, hits: list) -> str:
-        top_hits = hits[:3]
-        evidence_lines = []
-        for index, hit in enumerate(top_hits, start=1):
-            snippet = hit.chunk.text.strip().replace("\n", " ")
-            evidence_lines.append(
-                f"{index}. {hit.chunk.title}: {snippet[:280]}{'...' if len(snippet) > 280 else ''}"
-            )
+    @staticmethod
+    def _select_diverse_sources(course_hits: list, upload_hits: list, limit: int) -> list:
+        """Keep high-scoring results while retaining Slide and Script evidence."""
+        ranked_hits = sorted([*course_hits, *upload_hits], key=lambda hit: hit.score, reverse=True)
+        selected = []
+        selected_ids = set()
+        for source_type in ("slide", "transcript", "user_upload"):
+            hit = next((item for item in ranked_hits if item.chunk.source_type == source_type), None)
+            if hit:
+                selected.append(hit)
+                selected_ids.add(hit.chunk.chunk_id)
+        for hit in ranked_hits:
+            if len(selected) >= limit:
+                break
+            if hit.chunk.chunk_id not in selected_ids:
+                selected.append(hit)
+                selected_ids.add(hit.chunk.chunk_id)
+        return sorted(selected, key=lambda hit: hit.score, reverse=True)[:limit]
 
-        answer_parts = [
-            "Tóm tắt từ học liệu liên quan nhất:",
+    @staticmethod
+    def _compose_answer(hits: list) -> str:
+        evidence_lines = []
+        for hit in hits[:4]:
+            snippet = hit.chunk.text.strip().replace("\n", " ")
+            source_name = {
+                "slide": "Slide",
+                "transcript": "Script",
+                "user_upload": "Tài liệu đã tải lên",
+            }[hit.chunk.source_type]
+            evidence_lines.append(
+                f"- [{source_name}] {hit.chunk.title}: {snippet[:280]}{'...' if len(snippet) > 280 else ''}"
+            )
+        return "\n".join([
+            "Mình đã tìm trong toàn bộ Slide và Script của khóa học. Các nguồn phù hợp nhất là:",
             *evidence_lines,
-            "",
-            "Gợi ý học tiếp:",
-            "Bạn nên mở các citation để xem đúng trang slide hoặc đoạn transcript rồi đối chiếu với phần đang học.",
-            "Nếu bạn đang ôn quiz/lab, hãy hỏi tiếp theo dạng 'bài này nằm ở lesson nào' hoặc 'tóm tắt lại thành 3 ý chính'.",
-            "",
-            "Ngữ cảnh tiến độ hiện tại:",
-            memory_context,
-            "",
-            f"Câu hỏi gốc: {message}",
-        ]
-        return "\n".join(answer_parts)
+        ])

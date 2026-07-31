@@ -11,10 +11,18 @@ class CourseLesson(BaseModel):
     completion_percent: int = 0
 
 
+class CourseSlide(BaseModel):
+    slide_id: str
+    title: str
+    slide_file: str
+    slide_viewer_path: str
+
+
 class CourseOutlineResponse(BaseModel):
     course_id: str
     learner_id: str
     lessons: list[CourseLesson] = Field(default_factory=list)
+    slides: list[CourseSlide] = Field(default_factory=list)
 
 
 class LessonDetailResponse(BaseModel):

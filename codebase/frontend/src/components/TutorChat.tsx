@@ -1,13 +1,14 @@
 import { FormEvent, useEffect, useState } from "react";
 
 import { sendChat, uploadDocument } from "../services/api";
-import type { ChatResponse, UploadResponse } from "../types/api";
+import type { ChatResponse, Citation, UploadResponse } from "../types/api";
 import { CitationLink } from "./CitationLink";
 
 type TutorChatProps = {
   learnerId: string;
   courseId: string;
   currentLessonId: string | null;
+  onOpenCitation: (citation: Citation) => void;
 };
 
 type ChatTurn = {
@@ -16,7 +17,7 @@ type ChatTurn = {
   response?: ChatResponse;
 };
 
-export function TutorChat({ learnerId, courseId, currentLessonId }: TutorChatProps) {
+export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation }: TutorChatProps) {
   const [message, setMessage] = useState("");
   const [chatTurns, setChatTurns] = useState<ChatTurn[]>([
     {
@@ -91,6 +92,7 @@ export function TutorChat({ learnerId, courseId, currentLessonId }: TutorChatPro
                   <CitationLink
                     key={`${citation.source_id}-${citation.segment_id}-${citation.page}`}
                     citation={citation}
+                    onOpen={onOpenCitation}
                   />
                 ))}
               </div>
