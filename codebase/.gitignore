@@ -1,0 +1,19 @@
+.env
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+frontend/node_modules/
+frontend/dist/
+
+# Data pack và dữ liệu sinh ra chỉ dùng local, không commit.
+data/vlearn-pack/
+data/processed/
+data/vector_store/
+data/user_uploads/
+
+# Long-term memory local.
+storage/
+

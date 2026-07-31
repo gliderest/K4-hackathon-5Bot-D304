@@ -1,0 +1,20 @@
+{
+  "course_id": "ai-thuc-chien",
+  "lessons": [
+    {
+      "lesson_id": "day-01",
+      "day": 1,
+      "title": "Day 1",
+      "slide_file": "slides/d1-slide-hackathon.pdf",
+      "transcript_file": "transcript/transcript-01-clean.md"
+    },
+    {
+      "lesson_id": "day-02",
+      "day": 2,
+      "title": "Day 2",
+      "slide_file": "slides/d2-slide-hackathon.pdf",
+      "transcript_file": "transcript/transcript-02-clean.md"
+    }
+  ]
+}
+

@@ -1,0 +1,31 @@
+# API
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+pydantic==2.11.7
+pydantic-settings==2.10.1
+python-multipart==0.0.20
+httpx==0.28.1
+orjson==3.11.1
+tenacity==9.1.2
+
+# AI providers
+openai==1.99.1
+google-genai==1.29.0
+
+# RAG va xu ly hoc lieu
+chromadb==1.0.15
+sentence-transformers==5.0.0
+pymupdf==1.26.3
+python-docx==1.2.0
+numpy==2.3.2
+rapidfuzz==3.13.0
+
+# Long-term memory
+sqlalchemy==2.0.42
+aiosqlite==0.21.0
+alembic==1.16.4
+
+# Test va chat luong code
+pytest==8.4.1
+pytest-asyncio==1.1.0
+ruff==0.12.7

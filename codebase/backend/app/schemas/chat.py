@@ -1,0 +1,30 @@
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+
+class Citation(BaseModel):
+    label: str
+    source_type: Literal["slide", "transcript", "user_upload"]
+    source_id: str
+    lesson_id: str | None = None
+    page: int | None = None
+    segment_id: str | None = None
+    viewer_path: str
+    score: float | None = None
+
+
+class ChatRequest(BaseModel):
+    learner_id: str
+    course_id: str
+    message: str = Field(min_length=1, max_length=4000)
+    current_lesson_id: str | None = None
+    uploaded_document_ids: list[str] = Field(default_factory=list)
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    citations: list[Citation] = Field(default_factory=list)
+    confidence: Literal["high", "medium", "low"]
+    needs_clarification: bool = False
+    suggested_next_action: str | None = None
