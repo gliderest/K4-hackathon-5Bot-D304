@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from backend.app.schemas.chat import Citation
+from backend.app.schemas.chat import Citation, ToolTraceEvent
 
 
 class ConversationSummary(BaseModel):
@@ -16,6 +16,7 @@ class ConversationMessage(BaseModel):
     role: Literal["user", "assistant"]
     content: str
     citations: list[Citation] = Field(default_factory=list)
+    tool_trace: list[ToolTraceEvent] = Field(default_factory=list)
     created_at: str
 
 

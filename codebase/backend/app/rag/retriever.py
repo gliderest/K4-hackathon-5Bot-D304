@@ -37,11 +37,13 @@ class LocalRetriever:
         query: str,
         learner_id: str,
         document_ids: list[str],
+        conversation_id: str | None,
         top_k: int,
     ) -> list[SearchHit]:
         chunks, vectors = await self._load_upload_chunks(
             learner_id=learner_id,
             document_ids=document_ids,
+            conversation_id=conversation_id,
         )
         return await self._search_with_provider(
             query=query,
@@ -56,6 +58,7 @@ class LocalRetriever:
         source_id: str,
         learner_id: str,
         document_ids: list[str],
+        conversation_id: str | None,
     ) -> list[SourceChunk]:
         """Return chunks from one named source, without searching other documents."""
         if source_type in {"slide", "transcript"}:
@@ -74,6 +77,7 @@ class LocalRetriever:
         upload_chunks, _ = await self._load_upload_chunks(
             learner_id=learner_id,
             document_ids=document_ids,
+            conversation_id=conversation_id,
         )
         return [chunk for chunk in upload_chunks if chunk.source_file == source_id]
 
@@ -81,14 +85,19 @@ class LocalRetriever:
         self,
         learner_id: str,
         document_ids: list[str],
+        conversation_id: str | None,
     ) -> tuple[list[SourceChunk], dict[str, list[float]]]:
-        learner_dir = self.settings.resolve_path(self.settings.user_upload_dir) / learner_id
-        if not learner_dir.exists():
+        if not conversation_id:
+            return [], {}
+        conversation_dir = (
+            self.settings.resolve_path(self.settings.user_upload_dir) / learner_id / conversation_id
+        )
+        if not conversation_dir.exists():
             return [], {}
         allowed = set(document_ids)
         chunks: list[SourceChunk] = []
         vectors: dict[str, list[float]] = {}
-        for metadata_file in learner_dir.glob("*.chunks.json"):
+        for metadata_file in conversation_dir.glob("*.chunks.json"):
             doc_id = metadata_file.stem.replace(".chunks", "")
             if allowed and doc_id not in allowed:
                 continue
@@ -108,7 +117,10 @@ class LocalRetriever:
                         page=item.get("page"),
                         segment_id=item.get("segment_id"),
                         owner_learner_id=learner_id,
-                        metadata=item.get("metadata", {}),
+                        metadata={
+                            **item.get("metadata", {}),
+                            "conversation_id": conversation_id,
+                        },
                     )
                 )
         return chunks, vectors

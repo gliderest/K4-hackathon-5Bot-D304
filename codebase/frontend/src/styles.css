@@ -226,6 +226,76 @@ input {
   overflow: auto;
 }
 
+.additional-documents-group {
+  flex: 0 0 auto;
+  max-height: 190px;
+}
+
+.additional-document-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.add-document-button,
+.staged-document-actions button {
+  cursor: pointer;
+  font: inherit;
+}
+
+.add-document-button {
+  padding: 6px 8px;
+  border-radius: 9px;
+  background: #132238;
+  color: #fff;
+  font-size: 12px;
+}
+
+.add-document-button input {
+  display: none;
+}
+
+.staged-document-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 10px;
+  background: #eef4f9;
+  color: #294255;
+  font-size: 12px;
+}
+
+.staged-document-actions {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.staged-document-actions button {
+  border: 0;
+  border-radius: 7px;
+  padding: 4px 6px;
+  background: #fff;
+  color: #294255;
+}
+
+.staged-document-actions button:first-child {
+  background: #132238;
+  color: #fff;
+}
+
+.additional-document-list {
+  overflow: auto;
+}
+
+.document-error {
+  margin: 0;
+  color: #9d3f1e;
+  font-size: 12px;
+}
+
 .lesson-card {
   width: 100%;
   border: 1px solid rgba(19, 34, 56, 0.08);
@@ -406,6 +476,81 @@ input {
   background: #eef7ff;
 }
 
+.tool-trace {
+  margin-top: 8px;
+  border-top: 1px solid rgba(19, 34, 56, 0.08);
+  padding-top: 8px;
+}
+
+.tool-trace-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: #697a8e;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tool-trace-toggle:hover {
+  color: #294255;
+}
+
+.tool-trace-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 8px 0 0;
+  padding: 10px 12px 10px 28px;
+  border-radius: 12px;
+  background: #f5f8fb;
+  color: #465a70;
+  font-size: 12px;
+}
+
+.tool-trace-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tool-trace-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.tool-trace-phase {
+  color: #78899b;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.tool-trace-heading code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: #e6edf4;
+  color: #294255;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+}
+
+.tool-trace-item.is-completed .tool-trace-phase {
+  color: #28735c;
+}
+
+.tool-trace-item.is-skipped .tool-trace-phase {
+  color: #9a6b22;
+}
+
+.tool-trace-empty {
+  color: #697a8e;
+}
+
 .citation-stack {
   margin-top: 10px;
   display: flex;
@@ -432,6 +577,50 @@ input {
   border-radius: 22px;
   background: #fff;
   box-shadow: 0 12px 24px rgba(19, 34, 56, 0.08);
+}
+
+.composer-main {
+  display: flex;
+  flex: 1;
+  align-self: stretch;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.attachment-chip-list {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 0 6px;
+}
+
+.attachment-chip {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  border-radius: 9px;
+  background: #eef4f9;
+  color: #294255;
+  font-size: 12px;
+}
+
+.attachment-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-chip button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
 }
 
 .chat-composer textarea {

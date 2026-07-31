@@ -1,8 +1,20 @@
 import { FormEvent, useEffect, useState } from "react";
 
-import { getConversation, getConversations, sendChat, uploadDocument } from "../services/api";
-import type { ChatResponse, Citation, ConversationSummary, CurrentDocument, UploadResponse } from "../types/api";
+import { getConversation, getConversations, sendChatStream, uploadDocument } from "../services/api";
+import type { ChatResponse, Citation, ConversationSummary, CurrentDocument, ToolTraceEvent, UploadResponse } from "../types/api";
 import { CitationLink } from "./CitationLink";
+
+const initialTutorMessage = "Hỏi mình về lesson, khái niệm, bài giảng, hoặc upload tài liệu riêng để đối chiếu.";
+
+const toolLabels: Record<ToolTraceEvent["tool_name"], string> = {
+  request_router: "request_router",
+  search_document: "search_document",
+  analyse_current_document: "analyse_current_document",
+};
+
+function createConversationId(): string {
+  return crypto.randomUUID();
+}
 
 type TutorChatProps = {
   learnerId: string;
@@ -13,25 +25,29 @@ type TutorChatProps = {
 };
 
 type ChatTurn = {
+  id: string;
   role: "assistant" | "user";
   content: string;
   response?: ChatResponse;
+  toolTrace?: ToolTraceEvent[];
+  isPending?: boolean;
 };
 
 export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation, currentDocument }: TutorChatProps) {
   const [message, setMessage] = useState("");
   const [chatTurns, setChatTurns] = useState<ChatTurn[]>([
     {
+      id: "welcome",
       role: "assistant",
-      content:
-        "Hỏi mình về lesson, khái niệm, bài giảng, hoặc upload tài liệu riêng để đối chiếu.",
+      content: initialTutorMessage,
     },
   ]);
   const [isSending, setIsSending] = useState(false);
   const [uploads, setUploads] = useState<UploadResponse[]>([]);
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string>(createConversationId);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [expandedTraceIds, setExpandedTraceIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -51,8 +67,10 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
   }, [learnerId, courseId]);
 
   function startNewConversation() {
-    setConversationId(null);
-    setChatTurns([{ role: "assistant", content: "Hỏi mình về lesson, khái niệm, bài giảng, hoặc upload tài liệu riêng để đối chiếu." }]);
+    setConversationId(createConversationId());
+    setUploads([]);
+    setChatTurns([{ id: "welcome", role: "assistant", content: initialTutorMessage }]);
+    setExpandedTraceIds(new Set());
     setIsHistoryOpen(false);
   }
 
@@ -60,13 +78,17 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
     try {
       const conversation = await getConversation(id, learnerId, courseId);
       setConversationId(conversation.conversation_id);
-      setChatTurns(conversation.messages.map((item) => ({
+      setUploads([]);
+      setChatTurns(conversation.messages.map((item, index) => ({
+        id: `history-${index}`,
         role: item.role,
         content: item.content,
+        toolTrace: item.tool_trace,
         response: item.role === "assistant"
-          ? { conversation_id: conversation.conversation_id, answer: item.content, citations: item.citations, confidence: "medium", needs_clarification: false, suggested_next_action: null }
+          ? { conversation_id: conversation.conversation_id, answer: item.content, citations: item.citations, tool_trace: item.tool_trace, confidence: "medium", needs_clarification: false, suggested_next_action: null }
           : undefined,
       })));
+      setExpandedTraceIds(new Set());
       setIsHistoryOpen(false);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Không mở được lịch sử chat");
@@ -78,29 +100,48 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
     if (!message.trim()) return;
 
     const nextMessage = message.trim();
-    setChatTurns((current) => [...current, { role: "user", content: nextMessage }]);
+    const attachedDocumentIds = uploads.map((upload) => upload.document_id);
+    const pendingTurnId = crypto.randomUUID();
+    setChatTurns((current) => [
+      ...current,
+      { id: crypto.randomUUID(), role: "user", content: nextMessage },
+      { id: pendingTurnId, role: "assistant", content: "....", toolTrace: [], isPending: true },
+    ]);
     setMessage("");
+    setUploads([]);
     setIsSending(true);
     setError(null);
 
     try {
-      const response = await sendChat({
+      const response = await sendChatStream({
         learner_id: learnerId,
         course_id: courseId,
         message: nextMessage,
         current_lesson_id: currentLessonId ?? undefined,
         current_document: currentDocument,
-        uploaded_document_ids: uploads.map((upload) => upload.document_id),
-        conversation_id: conversationId ?? undefined,
+        uploaded_document_ids: attachedDocumentIds,
+        conversation_id: conversationId,
+      }, (traceEvent) => {
+        setChatTurns((current) => current.map((turn) => (
+          turn.id === pendingTurnId
+            ? { ...turn, toolTrace: [...(turn.toolTrace ?? []), traceEvent] }
+            : turn
+        )));
       });
       setConversationId(response.conversation_id);
-      setChatTurns((current) => [
-        ...current,
-        { role: "assistant", content: response.answer, response },
-      ]);
+      setChatTurns((current) => current.map((turn) => (
+        turn.id === pendingTurnId
+          ? { ...turn, content: response.answer, response, toolTrace: response.tool_trace, isPending: false }
+          : turn
+      )));
       void refreshHistory();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Không gửi được câu hỏi");
+      setChatTurns((current) => current.map((turn) => (
+        turn.id === pendingTurnId
+          ? { ...turn, content: "Mình chưa thể tạo câu trả lời. Bạn hãy thử lại.", isPending: false }
+          : turn
+      )));
     } finally {
       setIsSending(false);
     }
@@ -110,11 +151,20 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
     if (!file) return;
     setError(null);
     try {
-      const response = await uploadDocument(learnerId, file);
+      const response = await uploadDocument(learnerId, conversationId, file);
       setUploads((current) => [...current, response]);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Không upload được file");
     }
+  }
+
+  function toggleTrace(turnId: string) {
+    setExpandedTraceIds((current) => {
+      const next = new Set(current);
+      if (next.has(turnId)) next.delete(turnId);
+      else next.add(turnId);
+      return next;
+    });
   }
 
   return (
@@ -130,10 +180,43 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
       </section> : null}
 
       <section className="chat-messages">
-        {chatTurns.map((turn, index) => (
-          <article key={`${turn.role}-${index}`} className={`message-card ${turn.role}`}>
+        {chatTurns.map((turn) => {
+          // The trace tab is deliberately limited to calls that reached a document tool.
+          // Routing and skipped states are implementation details, not tool executions.
+          const trace = (turn.response?.tool_trace ?? turn.toolTrace ?? []).filter(
+            (event) => event.tool_name !== "request_router" && event.status !== "skipped",
+          );
+          const isTraceExpanded = expandedTraceIds.has(turn.id);
+          return (
+          <article key={turn.id} className={`message-card ${turn.role}`}>
             <strong>{turn.role === "assistant" ? "Tutor" : "Bạn"}</strong>
             <pre>{turn.content}</pre>
+            {turn.role === "assistant" && trace.length > 0 ? (
+              <section className="tool-trace">
+                <button
+                  className="tool-trace-toggle"
+                  type="button"
+                  aria-expanded={isTraceExpanded}
+                  onClick={() => toggleTrace(turn.id)}
+                >
+                  <span>Suy luận</span>
+                  <span aria-hidden="true">{isTraceExpanded ? "⌃" : "⌄"}</span>
+                </button>
+                {isTraceExpanded ? (
+                  <ol className="tool-trace-list">
+                    {trace.length ? trace.map((event, traceIndex) => (
+                      <li key={`${event.tool_name}-${event.status}-${traceIndex}`} className={`tool-trace-item is-${event.status}`}>
+                        <div className="tool-trace-heading">
+                          <span className="tool-trace-phase">{event.status === "started" ? "Action" : "Observation"}</span>
+                          <code>{toolLabels[event.tool_name]}</code>
+                        </div>
+                        <span>{event.summary}</span>
+                      </li>
+                    )) : <li className="tool-trace-empty">Agent đang chuẩn bị xử lý yêu cầu…</li>}
+                  </ol>
+                ) : null}
+              </section>
+            ) : null}
             {turn.response?.citations?.length ? (
               <div className="citation-stack">
                 {turn.response.citations.map((citation) => (
@@ -146,24 +229,9 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
               </div>
             ) : null}
           </article>
-        ))}
+          );
+        })}
       </section>
-
-      {uploads.length ? (
-        <section className="upload-list">
-          {uploads.map((upload) => (
-            <a
-              key={upload.document_id}
-              className="upload-item"
-              href={upload.viewer_path}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {upload.file_name} ({upload.chunk_count} chunks)
-            </a>
-          ))}
-        </section>
-      ) : null}
 
       <form className="chat-composer" onSubmit={handleSubmit}>
         <div className="composer-box">
@@ -176,12 +244,15 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
             />
           </label>
 
-          <textarea
-            aria-label="Câu hỏi"
-            placeholder="Hỏi về lesson, slide, transcript..."
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-          />
+          <div className="composer-main">
+            {uploads.length ? <div className="attachment-chip-list">{uploads.map((upload) => <span key={upload.document_id} className="attachment-chip"><span aria-hidden="true">📎</span><span className="attachment-name">{upload.file_name}</span><button type="button" aria-label={`Gỡ ${upload.file_name}`} onClick={() => setUploads((current) => current.filter((item) => item.document_id !== upload.document_id))}>×</button></span>)}</div> : null}
+            <textarea
+              aria-label="Câu hỏi"
+              placeholder="Hỏi về lesson, slide, transcript..."
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+            />
+          </div>
 
           <button className="send-icon-button" type="submit" disabled={isSending} title="Gửi câu hỏi">
             <span aria-hidden="true">{isSending ? "..." : "↑"}</span>

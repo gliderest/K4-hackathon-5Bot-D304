@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
 
 from backend.app.core.runtime import runtime
 from backend.app.schemas.chat import ChatRequest, ChatResponse
@@ -14,6 +15,15 @@ async def chat(request: ChatRequest) -> ChatResponse:
         return await runtime.chat_service.answer(request)
     except ValueError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
+
+
+@router.post("/stream")
+async def stream_chat(request: ChatRequest) -> StreamingResponse:
+    return StreamingResponse(
+        runtime.chat_service.stream_answer(request),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.get("/history", response_model=list[ConversationSummary])

@@ -1,5 +1,9 @@
+import asyncio
+import json
+from collections.abc import AsyncIterator
+
 from backend.app.agent.tutor_agent import TutorAgent
-from backend.app.schemas.chat import ChatRequest, ChatResponse
+from backend.app.schemas.chat import ChatRequest, ChatResponse, ToolTraceEvent
 from backend.app.memory.chat_history_store import SqliteChatHistoryStore
 
 
@@ -9,6 +13,38 @@ class ChatService:
         self.history_store = history_store
 
     async def answer(self, request: ChatRequest) -> ChatResponse:
+        conversation_id, prepared_request = await self._prepare_request(request)
+        response = await self.agent.run(prepared_request)
+        return await self._finish_response(conversation_id, response)
+
+    async def stream_answer(self, request: ChatRequest) -> AsyncIterator[str]:
+        """Send tool activity first, then the final answer as Server-Sent Events."""
+        conversation_id, prepared_request = await self._prepare_request(request)
+        events: asyncio.Queue[tuple[str, dict]] = asyncio.Queue()
+
+        async def on_trace(event: ToolTraceEvent) -> None:
+            await events.put(("tool_trace", event.model_dump(mode="json")))
+
+        async def produce() -> None:
+            try:
+                response = await self.agent.run(prepared_request, on_trace=on_trace)
+                response = await self._finish_response(conversation_id, response)
+                await events.put(("answer", response.model_dump(mode="json")))
+            except Exception as error:  # The client cannot receive an HTTP error after streaming starts.
+                await events.put(("error", {"detail": str(error)}))
+
+        task = asyncio.create_task(produce())
+        try:
+            while True:
+                event_name, payload = await events.get()
+                yield self._as_sse(event_name, payload)
+                if event_name in {"answer", "error"}:
+                    break
+        finally:
+            if not task.done():
+                task.cancel()
+
+    async def _prepare_request(self, request: ChatRequest) -> tuple[str, ChatRequest]:
         conversation_id = await self.history_store.get_or_create(
             learner_id=request.learner_id,
             course_id=request.course_id,
@@ -20,12 +56,23 @@ class ChatService:
             role="user",
             content=request.message,
         )
-        response = await self.agent.run(request)
+        return conversation_id, request.model_copy(update={"conversation_id": conversation_id})
+
+    async def _finish_response(
+        self,
+        conversation_id: str,
+        response: ChatResponse,
+    ) -> ChatResponse:
         response = response.model_copy(update={"conversation_id": conversation_id})
         await self.history_store.append_message(
             conversation_id=conversation_id,
             role="assistant",
             content=response.answer,
             citations=response.citations,
+            tool_trace=response.tool_trace,
         )
         return response
+
+    @staticmethod
+    def _as_sse(event_name: str, payload: dict) -> str:
+        return f"event: {event_name}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"

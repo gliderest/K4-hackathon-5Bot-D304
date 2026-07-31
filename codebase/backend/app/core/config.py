@@ -29,6 +29,8 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite+aiosqlite:///./storage/vlearn.db"
     user_upload_dir: str = "./data/user_uploads"
+    additional_documents_dir: str = "./data/additional_documents"
+    pending_additional_documents_dir: str = "./data/pending_additional_documents"
     max_upload_mb: int = 20
 
     def resolve_path(self, value: str) -> Path:

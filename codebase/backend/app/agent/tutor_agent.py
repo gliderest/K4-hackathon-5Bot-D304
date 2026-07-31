@@ -1,13 +1,17 @@
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 from backend.app.agent.request_router import ToolRoute, choose_tool_route
 from backend.app.memory.progress_store import SqliteProgressStore
 from backend.app.rag.citation import build_citation
-from backend.app.schemas.chat import ChatRequest, ChatResponse
+from backend.app.schemas.chat import ChatRequest, ChatResponse, ToolTraceEvent
 from backend.app.schemas.progress import LessonProgress, ProgressPatch
 from backend.app.tools.search_document import SearchDocumentTool
 from backend.app.tools.analyse_current_document import AnalyseCurrentDocumentTool
 from backend.app.services.document_writer import CurrentDocumentWriter
+
+
+TraceCallback = Callable[[ToolTraceEvent], Awaitable[None]]
 
 
 @dataclass(slots=True)
@@ -17,10 +21,33 @@ class TutorAgent:
     current_document_writer: CurrentDocumentWriter
     progress_store: SqliteProgressStore
 
-    async def run(self, request: ChatRequest) -> ChatResponse:
+    async def run(
+        self,
+        request: ChatRequest,
+        on_trace: TraceCallback | None = None,
+    ) -> ChatResponse:
+        tool_trace: list[ToolTraceEvent] = []
+
+        async def record(
+            tool_name: str,
+            status: str,
+            summary: str,
+            result_count: int | None = None,
+        ) -> None:
+            event = ToolTraceEvent(
+                tool_name=tool_name,
+                status=status,
+                summary=summary,
+                result_count=result_count,
+            )
+            tool_trace.append(event)
+            if on_trace is not None:
+                await on_trace(event)
+
         if len(request.message.strip()) < 8:
             return ChatResponse(
                 answer="Bạn hãy mô tả rõ hơn câu hỏi để mình tìm đúng lesson, transcript hoặc slide liên quan.",
+                tool_trace=tool_trace,
                 confidence="low",
                 needs_clarification=True,
                 suggested_next_action=None,
@@ -28,16 +55,32 @@ class TutorAgent:
 
         route = choose_tool_route(request.message, request.current_document)
         if route is ToolRoute.ANALYSE_CURRENT_DOCUMENT:
-            return await self._analyse_open_document(request)
+            return await self._analyse_open_document(request, tool_trace, record)
 
         # current_lesson_id only records progress. Cross-document retrieval runs
         # only when the learner asks to find knowledge outside the open document.
+        await record(
+            "search_document",
+            "started",
+            "Đang tìm trong toàn bộ Slide, Script và tài liệu đã tải lên của cuộc hội thoại này.",
+        )
         search_result = await self.search_document.search(
             keyword=request.message,
             course_id=request.course_id,
             learner_id=request.learner_id,
             document_ids=request.uploaded_document_ids,
+            conversation_id=request.conversation_id,
             top_k=12,
+        )
+        await record(
+            "search_document",
+            "completed",
+            (
+                "Đã tìm thấy "
+                f"{len(search_result.course_hits)} đoạn trong học liệu khóa học và "
+                f"{len(search_result.upload_hits)} đoạn trong tài liệu đã tải lên."
+            ),
+            result_count=len(search_result.course_hits) + len(search_result.upload_hits),
         )
         combined_hits = self._select_diverse_sources(
             search_result.course_hits,
@@ -51,6 +94,7 @@ class TutorAgent:
                     "Mình chưa tìm thấy đoạn học liệu khớp mạnh với câu hỏi này. "
                     "Bạn thử nói rõ hơn tên bài học, khái niệm, hoặc upload thêm tài liệu riêng để mình đối chiếu."
                 ),
+                tool_trace=tool_trace,
                 confidence="low",
                 needs_clarification=True,
                 suggested_next_action=None,
@@ -77,28 +121,48 @@ class TutorAgent:
         return ChatResponse(
             answer=answer,
             citations=citations,
+            tool_trace=tool_trace,
             confidence=confidence,
             needs_clarification=False,
             suggested_next_action=None,
         )
 
-    async def _analyse_open_document(self, request: ChatRequest) -> ChatResponse:
+    async def _analyse_open_document(
+        self,
+        request: ChatRequest,
+        tool_trace: list[ToolTraceEvent],
+        record: TraceCallback,
+    ) -> ChatResponse:
         if request.current_document is None:
             return ChatResponse(
                 answer="Bạn hãy mở tài liệu cần tóm tắt hoặc giải thích trước, rồi gửi lại câu hỏi.",
+                tool_trace=tool_trace,
                 confidence="low",
                 needs_clarification=True,
                 suggested_next_action=None,
             )
 
+        await record(
+            "analyse_current_document",
+            "started",
+            f"Đang đọc nội dung tài liệu đang mở: {request.current_document.title}.",
+        )
         analysis = await self.analyse_current_document.analyse(
             document=request.current_document,
             learner_id=request.learner_id,
             document_ids=request.uploaded_document_ids,
+            conversation_id=request.conversation_id,
+        )
+        await record(
+            "analyse_current_document",
+            "completed",
+            f"Đã lấy {len(analysis.chunks)} đoạn nội dung từ tài liệu đang mở để phân tích.",
+            result_count=len(analysis.chunks),
         )
         if not analysis.chunks:
             return ChatResponse(
                 answer="Mình chưa đọc được nội dung của tài liệu đang mở. Bạn thử chọn lại tài liệu hoặc tải lại trang.",
+                tool_trace=tool_trace,
                 confidence="low",
                 needs_clarification=True,
                 suggested_next_action=None,
@@ -117,6 +181,7 @@ class TutorAgent:
         return ChatResponse(
             answer=answer,
             citations=[],
+            tool_trace=tool_trace,
             confidence="high",
             needs_clarification=False,
             suggested_next_action=None,

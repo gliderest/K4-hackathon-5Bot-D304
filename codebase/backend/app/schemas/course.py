@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 
+from backend.app.schemas.additional_document import AdditionalDocument
+
 
 class CourseLesson(BaseModel):
     lesson_id: str
@@ -23,6 +25,7 @@ class CourseOutlineResponse(BaseModel):
     learner_id: str
     lessons: list[CourseLesson] = Field(default_factory=list)
     slides: list[CourseSlide] = Field(default_factory=list)
+    additional_documents: list[AdditionalDocument] = Field(default_factory=list)
 
 
 class LessonDetailResponse(BaseModel):

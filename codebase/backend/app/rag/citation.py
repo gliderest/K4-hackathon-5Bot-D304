@@ -14,7 +14,12 @@ def build_citation(hit: SearchHit) -> Citation:
         label = f"{chunk.title} - {chunk.segment_id or 'segment'}"
     else:
         owner = chunk.owner_learner_id or "shared"
-        viewer_path = f"/api/assets/uploads/{owner}/{chunk.source_file}"
+        conversation_id = chunk.metadata.get("conversation_id")
+        viewer_path = (
+            f"/api/assets/uploads/{owner}/{conversation_id}/{chunk.source_file}"
+            if conversation_id
+            else f"/api/assets/uploads/{owner}/{chunk.source_file}"
+        )
         label = f"{chunk.title} - tài liệu người học"
 
     return Citation(

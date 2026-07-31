@@ -1,7 +1,7 @@
 import json
 import re
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import fitz
 from docx import Document
@@ -24,16 +24,27 @@ class UploadService:
         self.settings = settings
         self.embedding_service = embedding_service
 
-    async def save_upload(self, learner_id: str, file: UploadFile) -> UploadResponse:
+    async def save_upload(
+        self,
+        learner_id: str,
+        conversation_id: str,
+        file: UploadFile,
+    ) -> UploadResponse:
         self._validate_upload(file)
-        learner_dir = self.settings.resolve_path(self.settings.user_upload_dir) / learner_id
-        learner_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            UUID(conversation_id)
+        except ValueError as error:
+            raise ValueError("conversation_id không hợp lệ") from error
+        conversation_dir = (
+            self.settings.resolve_path(self.settings.user_upload_dir) / learner_id / conversation_id
+        )
+        conversation_dir.mkdir(parents=True, exist_ok=True)
 
         suffix = Path(file.filename or "upload.txt").suffix.lower()
         document_id = f"doc-{uuid4().hex[:8]}"
         stored_name = f"{document_id}{suffix}"
         binary = await file.read()
-        target_file = learner_dir / stored_name
+        target_file = conversation_dir / stored_name
         target_file.write_bytes(binary)
 
         text = self._extract_text(target_file)
@@ -48,14 +59,15 @@ class UploadService:
             for chunk, embedding in zip(chunks, embeddings, strict=False):
                 chunk["embedding"] = embedding
 
-        metadata_file = learner_dir / f"{document_id}.chunks.json"
+        metadata_file = conversation_dir / f"{document_id}.chunks.json"
         metadata_file.write_text(json.dumps(chunks, ensure_ascii=False, indent=2), encoding="utf-8")
 
         return UploadResponse(
             learner_id=learner_id,
+            conversation_id=conversation_id,
             document_id=document_id,
             file_name=file.filename or stored_name,
-            viewer_path=f"/api/assets/uploads/{learner_id}/{stored_name}",
+            viewer_path=f"/api/assets/uploads/{learner_id}/{conversation_id}/{stored_name}",
             chunk_count=len(chunks),
         )
 

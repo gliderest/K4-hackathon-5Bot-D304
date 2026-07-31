@@ -7,6 +7,7 @@ import { TutorChat } from "./components/TutorChat";
 import { getLesson, getOutline, getProgress } from "./services/api";
 import type {
   CourseOutlineResponse,
+  AdditionalDocument,
   CourseSlide,
   Citation,
   CurrentDocument,
@@ -22,6 +23,7 @@ export default function App() {
   const [progress, setProgress] = useState<ProgressSnapshot | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [selectedSlideId, setSelectedSlideId] = useState<string | null>(null);
+  const [selectedAdditionalDocument, setSelectedAdditionalDocument] = useState<AdditionalDocument | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<LessonDetailResponse | null>(null);
   const [selectedTranscriptSegmentId, setSelectedTranscriptSegmentId] = useState<string | null>(null);
   const [selectedSlideViewerPath, setSelectedSlideViewerPath] = useState<string | null>(null);
@@ -64,6 +66,7 @@ export default function App() {
   }, [selectedLessonId]);
 
   function selectScript(lessonId: string) {
+    setSelectedAdditionalDocument(null);
     setSelectedExternalCitation(null);
     setSelectedSlideId(null);
     setSelectedSlideViewerPath(null);
@@ -73,12 +76,31 @@ export default function App() {
   }
 
   function selectSlide(slide: CourseSlide) {
+    setSelectedAdditionalDocument(null);
     setSelectedExternalCitation(null);
     setSelectedLessonId(null);
     setSelectedLesson(null);
     setSelectedTranscriptSegmentId(null);
     setSelectedSlideViewerPath(null);
     setSelectedSlideId(slide.slide_id);
+  }
+
+  function selectAdditionalDocument(document: AdditionalDocument) {
+    setSelectedLessonId(null);
+    setSelectedLesson(null);
+    setSelectedSlideId(null);
+    setSelectedSlideViewerPath(null);
+    setSelectedTranscriptSegmentId(null);
+    setSelectedExternalCitation(null);
+    setSelectedAdditionalDocument(document);
+  }
+
+  async function refreshOutline() {
+    try {
+      setOutline(await getOutline(COURSE_ID, LEARNER_ID));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Không tải được tài liệu thêm");
+    }
   }
 
   function openCitation(citation: Citation) {
@@ -136,6 +158,8 @@ export default function App() {
         : undefined;
   const viewerContent: ViewerContent | null = selectedExternalCitation
     ? { type: "document", title: selectedExternalCitation.label, viewerPath: selectedExternalCitation.viewer_path }
+    : selectedAdditionalDocument
+      ? { type: "document", title: selectedAdditionalDocument.title, viewerPath: selectedAdditionalDocument.viewer_path }
     : selectedLesson
     ? { type: "script", lesson: selectedLesson, segmentId: selectedTranscriptSegmentId }
     : selectedSlide
@@ -148,11 +172,15 @@ export default function App() {
         <LessonCatalog
           lessons={outline?.lessons ?? []}
           slides={outline?.slides ?? []}
+          additionalDocuments={outline?.additional_documents ?? []}
           progress={progress}
           selectedLessonId={selectedLessonId}
           selectedSlideId={selectedSlideId}
+          selectedAdditionalDocumentId={selectedAdditionalDocument?.document_id ?? null}
           onSelectLesson={selectScript}
           onSelectSlide={selectSlide}
+          onSelectAdditionalDocument={selectAdditionalDocument}
+          onAdditionalDocumentsChanged={() => void refreshOutline()}
         />
       </aside>
 

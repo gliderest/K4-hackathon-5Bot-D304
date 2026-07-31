@@ -9,6 +9,13 @@ export type Citation = {
   score: number | null;
 };
 
+export type ToolTraceEvent = {
+  tool_name: "request_router" | "search_document" | "analyse_current_document";
+  status: "started" | "completed" | "skipped";
+  summary: string;
+  result_count: number | null;
+};
+
 export type ChatRequest = {
   learner_id: string;
   course_id: string;
@@ -30,6 +37,7 @@ export type ChatResponse = {
   conversation_id: string;
   answer: string;
   citations: Citation[];
+  tool_trace: ToolTraceEvent[];
   confidence: "high" | "medium" | "low";
   needs_clarification: boolean;
   suggested_next_action: string | null;
@@ -46,6 +54,7 @@ export type ConversationMessage = {
   role: "user" | "assistant";
   content: string;
   citations: Citation[];
+  tool_trace: ToolTraceEvent[];
   created_at: string;
 };
 
@@ -77,6 +86,21 @@ export type CourseOutlineResponse = {
   learner_id: string;
   lessons: CourseLesson[];
   slides: CourseSlide[];
+  additional_documents: AdditionalDocument[];
+};
+
+export type AdditionalDocument = {
+  document_id: string;
+  title: string;
+  file_name: string;
+  viewer_path: string;
+  created_at: string;
+};
+
+export type StagedAdditionalDocument = {
+  stage_id: string;
+  file_name: string;
+  viewer_path: string;
 };
 
 export type LessonDetailResponse = {
@@ -92,6 +116,7 @@ export type LessonDetailResponse = {
 
 export type UploadResponse = {
   learner_id: string;
+  conversation_id: string;
   document_id: string;
   file_name: string;
   viewer_path: string;

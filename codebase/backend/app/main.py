@@ -45,3 +45,13 @@ app.mount(
     StaticFiles(directory=settings.resolve_path(settings.user_upload_dir)),
     name="uploads",
 )
+app.mount(
+    "/api/assets/additional-documents",
+    StaticFiles(directory=settings.resolve_path(settings.additional_documents_dir), check_dir=False),
+    name="additional-documents",
+)
+app.mount(
+    "/api/assets/pending-additional-documents",
+    StaticFiles(directory=settings.resolve_path(settings.pending_additional_documents_dir), check_dir=False),
+    name="pending-additional-documents",
+)

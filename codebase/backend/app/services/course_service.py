@@ -1,5 +1,6 @@
 from backend.app.core.config import Settings
 from backend.app.memory.progress_store import SqliteProgressStore
+from backend.app.memory.additional_document_store import SqliteAdditionalDocumentStore
 from backend.app.rag.ingestion import CourseCorpus
 from backend.app.schemas.course import (
     CourseLesson,
@@ -24,10 +25,12 @@ class CourseService:
         settings: Settings,
         corpus: CourseCorpus,
         progress_store: SqliteProgressStore,
+        additional_document_store: SqliteAdditionalDocumentStore,
     ) -> None:
         self.settings = settings
         self.corpus = corpus
         self.progress_store = progress_store
+        self.additional_document_store = additional_document_store
 
     async def get_outline(self, course_id: str, learner_id: str) -> CourseOutlineResponse:
         progress = await self.progress_store.get(learner_id=learner_id, course_id=course_id)
@@ -59,11 +62,13 @@ class CourseService:
             )
             for slide in self.corpus.slide_documents
         ]
+        additional_documents = await self.additional_document_store.list()
         return CourseOutlineResponse(
             course_id=course_id,
             learner_id=learner_id,
             lessons=lessons,
             slides=slides,
+            additional_documents=additional_documents,
         )
 
     async def get_lesson(self, course_id: str, lesson_id: str) -> LessonDetailResponse:

@@ -7,7 +7,7 @@ from uuid import uuid4
 
 import aiosqlite
 
-from backend.app.schemas.chat import Citation
+from backend.app.schemas.chat import Citation, ToolTraceEvent
 from backend.app.schemas.conversation import (
     ConversationDetail,
     ConversationMessage,
@@ -38,6 +38,15 @@ class SqliteChatHistoryStore:
                 )
                 """
             )
+            cursor = await connection.execute("PRAGMA table_info(chat_messages)")
+            message_columns = {row[1] for row in await cursor.fetchall()}
+            if "tool_trace_json" not in message_columns:
+                await connection.execute(
+                    """
+                    ALTER TABLE chat_messages
+                    ADD COLUMN tool_trace_json TEXT NOT NULL DEFAULT '[]'
+                    """
+                )
             await connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS chat_messages (
@@ -76,16 +85,18 @@ class SqliteChatHistoryStore:
             async with aiosqlite.connect(self.database_path) as connection:
                 cursor = await connection.execute(
                     """
-                    SELECT conversation_id FROM chat_conversations
-                    WHERE conversation_id = ? AND learner_id = ? AND course_id = ?
+                    SELECT learner_id, course_id FROM chat_conversations
+                    WHERE conversation_id = ?
                     """,
-                    (conversation_id, learner_id, course_id),
+                    (conversation_id,),
                 )
-                if await cursor.fetchone():
+                existing = await cursor.fetchone()
+            if existing:
+                if existing[0] == learner_id and existing[1] == course_id:
                     return conversation_id
-            raise ValueError("Không tìm thấy cuộc hội thoại của người học này.")
+                raise ValueError("Không tìm thấy cuộc hội thoại của người học này.")
 
-        new_id = str(uuid4())
+        new_id = conversation_id or str(uuid4())
         now = utcnow_iso()
         async with aiosqlite.connect(self.database_path) as connection:
             await connection.execute(
@@ -105,19 +116,25 @@ class SqliteChatHistoryStore:
         role: str,
         content: str,
         citations: list[Citation] | None = None,
+        tool_trace: list[ToolTraceEvent] | None = None,
     ) -> None:
         now = utcnow_iso()
         citation_json = json.dumps(
             [citation.model_dump(mode="json") for citation in citations or []],
             ensure_ascii=False,
         )
+        tool_trace_json = json.dumps(
+            [item.model_dump(mode="json") for item in tool_trace or []],
+            ensure_ascii=False,
+        )
         async with aiosqlite.connect(self.database_path) as connection:
             await connection.execute(
                 """
-                INSERT INTO chat_messages (conversation_id, role, content, citations_json, created_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO chat_messages (
+                    conversation_id, role, content, citations_json, tool_trace_json, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (conversation_id, role, content, citation_json, now),
+                (conversation_id, role, content, citation_json, tool_trace_json, now),
             )
             await connection.execute(
                 """
@@ -171,7 +188,7 @@ class SqliteChatHistoryStore:
                 return None
             cursor = await connection.execute(
                 """
-                SELECT role, content, citations_json, created_at
+                SELECT role, content, citations_json, tool_trace_json, created_at
                 FROM chat_messages WHERE conversation_id = ? ORDER BY id ASC
                 """,
                 (conversation_id,),
@@ -185,7 +202,8 @@ class SqliteChatHistoryStore:
                     role=row[0],
                     content=row[1],
                     citations=[Citation.model_validate(item) for item in json.loads(row[2])],
-                    created_at=row[3],
+                    tool_trace=[ToolTraceEvent.model_validate(item) for item in json.loads(row[3])],
+                    created_at=row[4],
                 )
                 for row in rows
             ],

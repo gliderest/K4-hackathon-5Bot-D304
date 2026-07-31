@@ -21,6 +21,7 @@ class AnalyseCurrentDocumentTool:
         document: CurrentDocument,
         learner_id: str,
         document_ids: list[str] | None = None,
+        conversation_id: str | None = None,
         max_chunks: int = 12,
     ) -> CurrentDocumentAnalysis:
         chunks = await self.retriever.get_document_chunks(
@@ -28,6 +29,7 @@ class AnalyseCurrentDocumentTool:
             source_id=document.source_id,
             learner_id=learner_id,
             document_ids=document_ids or [],
+            conversation_id=conversation_id,
         )
         selected = self._sample_chunks(chunks, max_chunks=max_chunks)
         return CurrentDocumentAnalysis(

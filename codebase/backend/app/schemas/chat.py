@@ -3,6 +3,17 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+class ToolTraceEvent(BaseModel):
+    """A user-facing activity entry for a tool call, not hidden model reasoning."""
+
+    tool_name: Literal[
+        "request_router", "search_document", "analyse_current_document"
+    ]
+    status: Literal["started", "completed", "skipped"]
+    summary: str
+    result_count: int | None = None
+
+
 class Citation(BaseModel):
     label: str
     source_type: Literal["slide", "transcript", "user_upload"]
@@ -35,6 +46,7 @@ class ChatResponse(BaseModel):
     conversation_id: str = ""
     answer: str
     citations: list[Citation] = Field(default_factory=list)
+    tool_trace: list[ToolTraceEvent] = Field(default_factory=list)
     confidence: Literal["high", "medium", "low"]
     needs_clarification: bool = False
     suggested_next_action: str | None = None

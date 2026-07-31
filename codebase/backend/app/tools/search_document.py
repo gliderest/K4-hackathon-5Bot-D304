@@ -24,6 +24,7 @@ class SearchDocumentTool:
         course_id: str,
         learner_id: str,
         document_ids: list[str] | None = None,
+        conversation_id: str | None = None,
         top_k: int = 12,
     ) -> SearchDocumentResult:
         query = keyword.strip()
@@ -39,6 +40,7 @@ class SearchDocumentTool:
             query=query,
             learner_id=learner_id,
             document_ids=document_ids or [],
+            conversation_id=conversation_id,
             top_k=min(3, top_k),
         )
         return SearchDocumentResult(course_hits=course_hits, upload_hits=upload_hits)

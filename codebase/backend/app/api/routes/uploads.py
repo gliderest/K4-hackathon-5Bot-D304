@@ -10,9 +10,14 @@ router = APIRouter()
 @router.post("", response_model=UploadResponse)
 async def upload_document(
     learner_id: str = Form(...),
+    conversation_id: str = Form(...),
     file: UploadFile = File(...),
 ) -> UploadResponse:
     try:
-        return await runtime.upload_service.save_upload(learner_id=learner_id, file=file)
+        return await runtime.upload_service.save_upload(
+            learner_id=learner_id,
+            conversation_id=conversation_id,
+            file=file,
+        )
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
