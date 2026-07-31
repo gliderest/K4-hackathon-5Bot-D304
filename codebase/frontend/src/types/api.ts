@@ -1,6 +1,6 @@
 export type Citation = {
   label: string;
-  source_type: "slide" | "transcript" | "user_upload";
+  source_type: "slide" | "transcript" | "user_upload" | "web";
   source_id: string;
   lesson_id: string | null;
   page: number | null;
@@ -10,7 +10,7 @@ export type Citation = {
 };
 
 export type ToolTraceEvent = {
-  tool_name: "request_router" | "search_document" | "analyse_current_document";
+  tool_name: "request_router" | "search_document" | "analyse_current_document" | "search_web";
   status: "started" | "completed" | "skipped";
   summary: string;
   result_count: number | null;

@@ -7,7 +7,10 @@ class ToolTraceEvent(BaseModel):
     """A user-facing activity entry for a tool call, not hidden model reasoning."""
 
     tool_name: Literal[
-        "request_router", "search_document", "analyse_current_document"
+        "request_router",
+        "search_document",
+        "analyse_current_document",
+        "search_web",
     ]
     status: Literal["started", "completed", "skipped"]
     summary: str
@@ -16,7 +19,7 @@ class ToolTraceEvent(BaseModel):
 
 class Citation(BaseModel):
     label: str
-    source_type: Literal["slide", "transcript", "user_upload"]
+    source_type: Literal["slide", "transcript", "user_upload", "web"]
     source_id: str
     lesson_id: str | None = None
     page: int | None = None

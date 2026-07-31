@@ -11,8 +11,10 @@ from backend.app.services.course_service import CourseService
 from backend.app.services.upload_service import UploadService
 from backend.app.services.additional_document_service import AdditionalDocumentService
 from backend.app.services.document_writer import CurrentDocumentWriter
+from backend.app.services.web_answer_writer import WebAnswerWriter
 from backend.app.tools.search_document import SearchDocumentTool
 from backend.app.tools.analyse_current_document import AnalyseCurrentDocumentTool
+from backend.app.tools.search_web import SearchWebTool
 
 
 class AppRuntime:
@@ -37,7 +39,10 @@ class AppRuntime:
         self.agent = TutorAgent(
             search_document=SearchDocumentTool(retriever=self.retriever),
             analyse_current_document=AnalyseCurrentDocumentTool(retriever=self.retriever),
+            search_web=SearchWebTool(settings=settings),
+            web_search_fallback_min_score=settings.web_search_fallback_min_score,
             current_document_writer=CurrentDocumentWriter(settings),
+            web_answer_writer=WebAnswerWriter(settings),
             progress_store=self.progress_store,
         )
         self.chat_service = ChatService(agent=self.agent, history_store=self.chat_history_store)

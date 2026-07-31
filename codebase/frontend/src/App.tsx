@@ -135,14 +135,17 @@ export default function App() {
   }
 
   const selectedSlide = outline?.slides.find((slide) => slide.slide_id === selectedSlideId);
-  const currentDocument: CurrentDocument | undefined = selectedExternalCitation
+  const citationDocument: CurrentDocument | undefined = selectedExternalCitation
+    && selectedExternalCitation.source_type !== "web"
     ? {
         source_type: selectedExternalCitation.source_type,
         source_id: selectedExternalCitation.source_id,
         title: selectedExternalCitation.label,
         lesson_id: selectedExternalCitation.lesson_id,
       }
-    : selectedLesson
+    : undefined;
+  const currentDocument: CurrentDocument | undefined = citationDocument
+    ?? (selectedLesson
       ? {
           source_type: "transcript",
           source_id: selectedLesson.transcript_file,
@@ -155,7 +158,7 @@ export default function App() {
             source_id: selectedSlide.slide_file,
             title: selectedSlide.title,
           }
-        : undefined;
+        : undefined);
   const viewerContent: ViewerContent | null = selectedExternalCitation
     ? { type: "document", title: selectedExternalCitation.label, viewerPath: selectedExternalCitation.viewer_path }
     : selectedAdditionalDocument

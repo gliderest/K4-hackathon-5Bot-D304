@@ -6,6 +6,20 @@ type CitationLinkProps = {
 };
 
 export function CitationLink({ citation, onOpen }: CitationLinkProps) {
+  if (citation.source_type === "web") {
+    return (
+      <a
+        className="citation-link"
+        href={citation.viewer_path}
+        target="_blank"
+        rel="noreferrer"
+      >
+        <span>{citation.label}</span>
+        <small>Nguồn web</small>
+      </a>
+    );
+  }
+
   return (
     <a
       className="citation-link"

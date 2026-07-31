@@ -2,13 +2,20 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 from backend.app.agent.request_router import ToolRoute, choose_tool_route
+from backend.app.agent.safety_router import (
+    MessageScope,
+    OUT_OF_SCOPE_RESPONSE,
+    classify_message_scope,
+)
 from backend.app.memory.progress_store import SqliteProgressStore
 from backend.app.rag.citation import build_citation
-from backend.app.schemas.chat import ChatRequest, ChatResponse, ToolTraceEvent
+from backend.app.schemas.chat import Citation, ChatRequest, ChatResponse, ToolTraceEvent
 from backend.app.schemas.progress import LessonProgress, ProgressPatch
 from backend.app.tools.search_document import SearchDocumentTool
 from backend.app.tools.analyse_current_document import AnalyseCurrentDocumentTool
+from backend.app.tools.search_web import SearchWebTool, WebSearchHit
 from backend.app.services.document_writer import CurrentDocumentWriter
+from backend.app.services.web_answer_writer import WebAnswerWriter
 
 
 TraceCallback = Callable[[ToolTraceEvent], Awaitable[None]]
@@ -18,7 +25,10 @@ TraceCallback = Callable[[ToolTraceEvent], Awaitable[None]]
 class TutorAgent:
     search_document: SearchDocumentTool
     analyse_current_document: AnalyseCurrentDocumentTool
+    search_web: SearchWebTool
+    web_search_fallback_min_score: float
     current_document_writer: CurrentDocumentWriter
+    web_answer_writer: WebAnswerWriter
     progress_store: SqliteProgressStore
 
     async def run(
@@ -43,6 +53,16 @@ class TutorAgent:
             tool_trace.append(event)
             if on_trace is not None:
                 await on_trace(event)
+
+        scope = classify_message_scope(request.message, request.current_document)
+        if scope in {MessageScope.OUT_OF_SCOPE, MessageScope.PROMPT_INJECTION}:
+            return ChatResponse(
+                answer=OUT_OF_SCOPE_RESPONSE,
+                tool_trace=tool_trace,
+                confidence="low",
+                needs_clarification=False,
+                suggested_next_action=None,
+            )
 
         if len(request.message.strip()) < 8:
             return ChatResponse(
@@ -88,11 +108,61 @@ class TutorAgent:
             limit=6,
         )
 
-        if not combined_hits:
+        best_internal_score = max((hit.score for hit in combined_hits), default=0.0)
+        should_search_web = (
+            not combined_hits
+            or best_internal_score < self.web_search_fallback_min_score
+        )
+        if should_search_web:
+            fallback_reason = (
+                "Không có kết quả trong học liệu và ngữ cảnh hội thoại"
+                if not combined_hits
+                else (
+                    "Kết quả nội bộ có độ khớp cao nhất "
+                    f"{best_internal_score:.2f}, thấp hơn ngưỡng "
+                    f"{self.web_search_fallback_min_score:.2f}"
+                )
+            )
+            await record(
+                "search_web",
+                "started",
+                f"{fallback_reason}; đang tìm nguồn trên web.",
+            )
+            web_result = await self.search_web.search(request.message)
+            if web_result.hits:
+                await record(
+                    "search_web",
+                    "completed",
+                    f"Đã tìm thấy {len(web_result.hits)} nguồn web bên ngoài học liệu.",
+                    result_count=len(web_result.hits),
+                )
+                answer = await self.web_answer_writer.write(
+                    question=request.message,
+                    hits=web_result.hits,
+                )
+                return ChatResponse(
+                    answer=answer or self._compose_web_answer(web_result.hits),
+                    citations=self._build_web_citations(web_result.hits),
+                    tool_trace=tool_trace,
+                    confidence="medium",
+                    needs_clarification=False,
+                    suggested_next_action=None,
+                )
+
+            web_status = (
+                web_result.message
+                or "Không tìm thấy nguồn web phù hợp cho từ khóa này."
+            )
+            await record(
+                "search_web",
+                "completed",
+                web_status,
+                result_count=0,
+            )
             return ChatResponse(
                 answer=(
-                    "Mình chưa tìm thấy đoạn học liệu khớp mạnh với câu hỏi này. "
-                    "Bạn thử nói rõ hơn tên bài học, khái niệm, hoặc upload thêm tài liệu riêng để mình đối chiếu."
+                    "Mình chưa tìm thấy nguồn đủ tin cậy trong học liệu, ngữ cảnh hội thoại "
+                    f"hoặc web. {web_status}"
                 ),
                 tool_trace=tool_trace,
                 confidence="low",
@@ -222,6 +292,33 @@ class TutorAgent:
         return "\n".join([
             "Mình đã tìm trong toàn bộ Slide và Script của khóa học. Các nguồn phù hợp nhất là:",
             *evidence_lines,
+        ])
+
+    @staticmethod
+    def _build_web_citations(hits: list[WebSearchHit]) -> list[Citation]:
+        return [
+            Citation(
+                label=hit.title,
+                source_type="web",
+                source_id=hit.url,
+                viewer_path=hit.url,
+                score=None,
+            )
+            for hit in hits[:4]
+        ]
+
+    @staticmethod
+    def _compose_web_answer(hits: list[WebSearchHit]) -> str:
+        sources = []
+        for hit in hits[:4]:
+            snippet = hit.snippet.replace("\n", " ").strip()
+            sources.append(
+                f"- {hit.title}: {snippet[:300]}{'...' if len(snippet) > 300 else ''}"
+            )
+        return "\n".join([
+            "Mình không tìm thấy nội dung này trong học liệu hoặc ngữ cảnh hội thoại, "
+            "nên đã tham khảo các nguồn web sau:",
+            *sources,
         ])
 
     @staticmethod

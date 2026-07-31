@@ -17,6 +17,12 @@ class Settings(BaseSettings):
     embedding_model: str = ""
     embedding_batch_size: int = 64
 
+    web_search_provider: str = "tavily"
+    web_search_api_key: str = ""
+    web_search_max_results: int = 5
+    web_search_timeout_seconds: float = 12.0
+    web_search_fallback_min_score: float = 0.8
+
     course_id: str = "vlearn-hackathon"
     course_title: str = "VLearn Cross-Lesson AI Tutor"
     course_data_root: str = "./data/vlearn-pack"

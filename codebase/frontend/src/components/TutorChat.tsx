@@ -10,6 +10,7 @@ const toolLabels: Record<ToolTraceEvent["tool_name"], string> = {
   request_router: "request_router",
   search_document: "search_document",
   analyse_current_document: "analyse_current_document",
+  search_web: "search_web",
 };
 
 function createConversationId(): string {
