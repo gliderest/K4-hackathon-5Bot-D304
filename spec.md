@@ -90,6 +90,10 @@ Một học viên đang học một lesson đặt một câu hỏi; AI truy xu�
 6. Học viên click citation để viewer mở đúng trang/đoạn.
 7. Progress/memory lưu trạng thái học tập phục vụ gợi ý tiếp theo.
 
+### Chat answer card interaction
+
+Mỗi lượt hỏi–đáp được render thành một card riêng trong chat. Answer card hiển thị trạng thái đang tạo, mức confidence, citation có thể click, tool trace có thể mở rộng, suggested next action, nút sao chép và nút thử lại khi AI/provider lỗi. Suggested action không tự gửi request; nó điền câu hỏi vào composer để học viên kiểm soát trước khi gửi.
+
 ### Non-goals
 
 1. Không tự động chấm điểm hoặc quyết định điểm cuối kỳ.
@@ -244,6 +248,7 @@ Chọn hướng có ít hesitation hơn, citation dễ tìm hơn và task comple
 | CP4 | Bổ sung document analysis, upload và routing theo tài liệu đang mở | Hỗ trợ đúng ngữ cảnh học viên |
 | CP4 | Bổ sung backend/frontend tests | Kiểm tra flow core và các edge case |
 | CP5 | Ghi nhận feedback sơ bộ của 3 core members: core ổn, cần rà soát UI/UX | Chuẩn bị validation và cải thiện trải nghiệm trước demo cuối |
+| CP6 | Nâng cấp chat thành các question/answer card có confidence, citation, suggested action, copy và retry | Làm rõ trạng thái sinh câu trả lời và tăng tương tác ngay trong chat |
 | CP6 | Cập nhật sau user validation thật | Chỉ điền sau khi có observation, quote và quyết định thay đổi |
 
 ## Trạng thái nộp bài

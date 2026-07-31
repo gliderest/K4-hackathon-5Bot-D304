@@ -32,6 +32,8 @@ type ChatTurn = {
   response?: ChatResponse;
   toolTrace?: ToolTraceEvent[];
   isPending?: boolean;
+  question?: string;
+  failed?: boolean;
 };
 
 export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation, currentDocument }: TutorChatProps) {
@@ -96,18 +98,14 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
     }
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!message.trim()) return;
-
-    const nextMessage = message.trim();
-    const attachedDocumentIds = uploads.map((upload) => upload.document_id);
-    const uploadedDocument = uploads[uploads.length - 1];
+  async function askTutor(nextMessage: string, attachedUploads = uploads) {
+    const attachedDocumentIds = attachedUploads.map((upload) => upload.document_id);
+    const uploadedDocument = attachedUploads[attachedUploads.length - 1];
     const pendingTurnId = crypto.randomUUID();
     setChatTurns((current) => [
       ...current,
       { id: crypto.randomUUID(), role: "user", content: nextMessage },
-      { id: pendingTurnId, role: "assistant", content: "....", toolTrace: [], isPending: true },
+      { id: pendingTurnId, role: "assistant", content: "Đang tìm nguồn và tạo câu trả lời…", toolTrace: [], isPending: true, question: nextMessage },
     ]);
     setMessage("");
     setUploads([]);
@@ -148,11 +146,40 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
       setError(caught instanceof Error ? caught.message : "Không gửi được câu hỏi");
       setChatTurns((current) => current.map((turn) => (
         turn.id === pendingTurnId
-          ? { ...turn, content: "Mình chưa thể tạo câu trả lời. Bạn hãy thử lại.", isPending: false }
+          ? { ...turn, content: "Mình chưa thể tạo câu trả lời. Bạn hãy thử lại.", isPending: false, failed: true }
           : turn
       )));
     } finally {
       setIsSending(false);
+    }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextMessage = message.trim();
+    if (!nextMessage || isSending) return;
+    await askTutor(nextMessage);
+  }
+
+  async function retryTurn(turn: ChatTurn) {
+    if (!turn.question || isSending) return;
+    setChatTurns((current) => {
+      const assistantIndex = current.findIndex((item) => item.id === turn.id);
+      return assistantIndex > 0 ? current.filter((_, index) => index !== assistantIndex && index !== assistantIndex - 1) : current;
+    });
+    await askTutor(turn.question, []);
+  }
+
+  function useSuggestedAction(action: string) {
+    setMessage(action);
+    requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>(".chat-composer textarea")?.focus());
+  }
+
+  async function copyAnswer(answer: string) {
+    try {
+      await navigator.clipboard.writeText(answer);
+    } catch {
+      setError("Không thể sao chép câu trả lời trên trình duyệt này");
     }
   }
 
@@ -197,8 +224,11 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
           );
           const isTraceExpanded = expandedTraceIds.has(turn.id);
           return (
-          <article key={turn.id} className={`message-card ${turn.role}`}>
-            <strong>{turn.role === "assistant" ? "Tutor" : "Bạn"}</strong>
+          <article key={turn.id} className={`message-card ${turn.role} ${turn.isPending ? "is-pending" : ""} ${turn.failed ? "is-failed" : ""}`}>
+            <div className="message-card-header">
+              <strong>{turn.role === "assistant" ? "Tutor" : "Bạn"}</strong>
+              {turn.role === "assistant" && turn.response ? <span className={`confidence-badge confidence-${turn.response.confidence}`}>{turn.response.confidence === "high" ? "Tin cậy cao" : turn.response.confidence === "medium" ? "Tin cậy vừa" : "Cần kiểm tra"}</span> : null}
+            </div>
             <pre>{turn.content}</pre>
             {turn.role === "assistant" && trace.length > 0 ? (
               <section className="tool-trace">
@@ -235,6 +265,17 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
                     onOpen={onOpenCitation}
                   />
                 ))}
+              </div>
+            ) : null}
+            {turn.role === "assistant" && turn.response?.suggested_next_action ? (
+              <button className="suggested-action" type="button" onClick={() => useSuggestedAction(turn.response?.suggested_next_action ?? "")}>
+                <span aria-hidden="true">→</span> {turn.response.suggested_next_action}
+              </button>
+            ) : null}
+            {turn.role === "assistant" && !turn.isPending ? (
+              <div className="answer-actions">
+                <button type="button" onClick={() => void copyAnswer(turn.content)}>Sao chép</button>
+                {turn.failed ? <button type="button" onClick={() => void retryTurn(turn)}>Thử lại</button> : null}
               </div>
             ) : null}
           </article>

@@ -470,10 +470,57 @@ input {
   border-radius: 18px;
   background: #fffdf7;
   border: 1px solid rgba(19, 34, 56, 0.08);
+  box-shadow: 0 8px 18px rgba(19, 34, 56, 0.04);
 }
 
 .message-card.user {
   background: #eef7ff;
+  border-color: rgba(55, 126, 184, 0.16);
+  margin-left: 24px;
+}
+
+.message-card.assistant {
+  margin-right: 8px;
+}
+
+.message-card.is-pending {
+  border-style: dashed;
+  color: #697a8e;
+}
+
+.message-card.is-failed {
+  border-color: rgba(170, 70, 37, 0.3);
+  background: #fff8f4;
+}
+
+.message-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.confidence-badge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.confidence-high {
+  background: #e3f4ec;
+  color: #28735c;
+}
+
+.confidence-medium {
+  background: #fff2d8;
+  color: #8b641d;
+}
+
+.confidence-low {
+  background: #ffe4d8;
+  color: #9d3f1e;
 }
 
 .tool-trace {
@@ -556,6 +603,48 @@ input {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.suggested-action {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 9px 11px;
+  border: 1px solid rgba(214, 90, 49, 0.2);
+  border-radius: 11px;
+  background: #fff5ed;
+  color: #9d3f1e;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+}
+
+.suggested-action:hover {
+  background: #ffe9da;
+}
+
+.answer-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.answer-actions button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #697a8e;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+}
+
+.answer-actions button:hover {
+  color: #294255;
+  text-decoration: underline;
 }
 
 .chat-composer {
