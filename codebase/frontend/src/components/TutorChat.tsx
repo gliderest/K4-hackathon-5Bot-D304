@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
 
 import { getConversation, getConversations, sendChatStream, uploadDocument } from "../services/api";
 import type { ChatResponse, Citation, ConversationSummary, CurrentDocument, ToolTraceEvent, UploadResponse } from "../types/api";
@@ -162,6 +162,14 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
     await askTutor(nextMessage);
   }
 
+  function handleMessageKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+    event.preventDefault();
+    if (!isSending && message.trim()) {
+      event.currentTarget.form?.requestSubmit();
+    }
+  }
+
   async function retryTurn(turn: ChatTurn) {
     if (!turn.question || isSending) return;
     setChatTurns((current) => {
@@ -303,6 +311,7 @@ export function TutorChat({ learnerId, courseId, currentLessonId, onOpenCitation
               placeholder="Hỏi về lesson, slide, transcript..."
               value={message}
               onChange={(event) => setMessage(event.target.value)}
+              onKeyDown={handleMessageKeyDown}
             />
           </div>
 

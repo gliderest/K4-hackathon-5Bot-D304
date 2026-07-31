@@ -105,7 +105,7 @@ input {
   flex: 0 0 auto;
   flex-direction: column;
   gap: 6px;
-  max-height: 190px;
+  max-height: 260px;
   overflow: auto;
   padding: 8px;
   border: 1px solid rgba(19, 34, 56, 0.1);
@@ -127,11 +127,12 @@ input {
 }
 
 .history-item {
-  overflow: hidden;
+  overflow: visible;
   background: transparent;
   color: #294255;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .history-item:hover,
